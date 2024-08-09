@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -63,7 +67,26 @@ export class UsersService {
     return `This action updates a #${id} ${updateUserDto}user`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    const user = await this.databaseService.user.findUnique({ where: { id } });
+
+    if (!user) throw new BadRequestException('User not found');
+
+    const delectedUser = await this.databaseService.user.delete({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: false,
+        role: false,
+      },
+    });
+
+    return {
+      statusCode: 200,
+      message: 'successful',
+      data: delectedUser,
+    };
   }
 }
