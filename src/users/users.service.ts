@@ -33,8 +33,17 @@ export class UsersService {
     return await this.databaseService.user.findUnique({ where: { email } });
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    return await this.databaseService.user.findMany({
+      where: { role: 'USER' },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: false,
+        role: true,
+      },
+    });
   }
 
   findOne(id: number) {

@@ -21,8 +21,14 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    const users = await this.usersService.findAll();
+    return {
+      statuCode: 200,
+      message: 'Successful',
+      results: users.length,
+      data: users,
+    };
   }
 
   @Get(':id')
