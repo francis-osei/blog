@@ -19,17 +19,26 @@ enum Role {
 }
 
 model User {
-  id           String    @id @unique @default(uuid())
-  email        String    @unique
-  username     String    @unique
-  password     String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  role         Role      @default(USER)
-  profileImage String
-  bio          String
-  post         Post[]
-  comments     Comment[]
+  id        String    @id @default(uuid())
+  email     String    @unique
+  username  String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  role      Role      @default(USER)
+  posts     Post[]
+  comments  Comment[]
+  profile   Profile?
+}
+
+model Profile {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  profileImage String? 
+  bio          String? 
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model Post {
