@@ -46,8 +46,17 @@ export class UsersService {
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    return await this.databaseService.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: false,
+        role: true,
+      },
+    });
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
