@@ -1,4 +1,4 @@
-import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from './auth.service';
@@ -12,7 +12,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(@Body(ValidationPipe) createUserDto: CreateUserDto) {
+  async register(@Body() createUserDto: CreateUserDto) {
     return {
       statusCode: 201,
       message: 'Successful',
@@ -21,7 +21,7 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body(ValidationPipe) loginDto: AuthLoginDto) {
+  async login(@Body() loginDto: AuthLoginDto) {
     return {
       statusCode: 201,
       message: 'Successful',
