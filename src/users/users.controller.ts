@@ -12,7 +12,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { authGuard } from 'src/guards/auth.guard';
+import { AuthGuard } from 'src/guards/auth.guard';
 import { Roles } from 'src/decorators/roles.docorator';
 import { Role } from '@prisma/client';
 import { RoleGuard } from 'src/guards/roles.guard';
@@ -52,7 +52,7 @@ export class UsersController {
     return this.usersService.update(+id, updateUserDto);
   }
 
-  @UseGuards(authGuard, RoleGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.ADMIN)
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
