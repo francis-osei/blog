@@ -1,8 +1,9 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Session } from '@nestjs/common';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from './auth.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
+import { SessionData } from 'express-session';
 
 @Controller('auth')
 export class AuthController {
@@ -21,11 +22,19 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginDto: AuthLoginDto) {
+  async login(@Session() session: SessionData, @Body() loginDto: AuthLoginDto) {
+    const user = await this.authservice.login(loginDto);
+
+    session.user = {
+      userId: user.user.id,
+      username: user.user.username,
+      role: [user.user.role],
+    };
+
     return {
       statusCode: 201,
       message: 'Successful',
-      data: await this.authservice.login(loginDto),
+      data: user,
     };
   }
 }
