@@ -1,9 +1,17 @@
-import { Body, Controller, Post, Session } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Request,
+  Session,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { AuthService } from './auth.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
 import { SessionData } from 'express-session';
+import { RefreshGuard } from 'src/guards/refresh.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -35,6 +43,18 @@ export class AuthController {
       statusCode: 201,
       message: 'Successful',
       data: user,
+    };
+  }
+
+  @UseGuards(RefreshGuard)
+  @Post('refresh')
+  async refreshToken(@Request() req) {
+    const tokens = await this.authservice.refreshToken(req.user);
+
+    return {
+      statusCode: 201,
+      message: 'successful',
+      ...tokens,
     };
   }
 }

@@ -44,4 +44,21 @@ export class AuthService {
 
     return user;
   }
+
+  async refreshToken(user: any) {
+    const payload = { sub: user.id, username: user.username };
+
+    return {
+      tokens: {
+        access_token: await this.jwtService.signAsync(payload, {
+          expiresIn: '1h',
+          secret: process.env.JWT_SECRET_KEY,
+        }),
+        refresh_token: await this.jwtService.signAsync(payload, {
+          expiresIn: '7d',
+          secret: process.env.JWT_REFRESH_TOKEN_KEY,
+        }),
+      },
+    };
+  }
 }
