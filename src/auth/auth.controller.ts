@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  HttpCode,
+  HttpStatus,
   Post,
   Request,
   Session,
@@ -12,6 +14,8 @@ import { AuthService } from './auth.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
 import { SessionData } from 'express-session';
 import { RefreshGuard } from 'src/guards/refresh.guard';
+import { ApiResponse, RefreshJwtToken } from 'src/types/response';
+import { GetTokens, IUser } from './types/auth.types';
 
 @Controller('auth')
 export class AuthController {
@@ -20,41 +24,51 @@ export class AuthController {
     private readonly authservice: AuthService,
   ) {}
 
+  @HttpCode(HttpStatus.OK)
   @Post('register')
-  async register(@Body() createUserDto: CreateUserDto) {
+  async register(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<ApiResponse<IUser>> {
     return {
-      statusCode: 201,
+      statusCode: HttpStatus.OK,
       message: 'Successful',
       data: await this.userService.create(createUserDto),
     };
   }
 
+  @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Session() session: SessionData, @Body() loginDto: AuthLoginDto) {
-    const user = await this.authservice.login(loginDto);
+  async login(
+    @Session() session: SessionData,
+    @Body() loginDto: AuthLoginDto,
+  ): Promise<ApiResponse<{ user: IUser; tokens: GetTokens }>> {
+    const { access_token, refresh_token, ...user } =
+      await this.authservice.login(loginDto);
 
     session.user = {
-      userId: user.user.id,
-      username: user.user.username,
-      role: [user.user.role],
+      userId: user.id,
+      username: user.username,
+      role: [user.role],
     };
 
     return {
-      statusCode: 201,
+      statusCode: HttpStatus.OK,
       message: 'Successful',
-      data: user,
+      data: {
+        user,
+        tokens: { access_token, refresh_token },
+      },
     };
   }
 
   @UseGuards(RefreshGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refreshToken(@Request() req) {
-    const tokens = await this.authservice.refreshToken(req.user);
-
+  async refreshToken(@Request() req): Promise<RefreshJwtToken> {
     return {
-      statusCode: 201,
+      statusCode: HttpStatus.OK,
       message: 'successful',
-      ...tokens,
+      tokens: await this.authservice.refreshToken(req.user),
     };
   }
 }

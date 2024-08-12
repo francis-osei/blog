@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { compare } from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { GetTokens, IUser, Login } from './types/auth.types';
+import { _env } from 'src/configs/constants';
 
 @Injectable()
 export class AuthService {
@@ -12,27 +13,37 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(authLoginDto: AuthLoginDto) {
+  async login(authLoginDto: AuthLoginDto): Promise<Login> {
     const user = await this.validatUser(authLoginDto);
 
     const payload = { sub: user.id, username: user.username };
 
+    const { access_token, refresh_token } = await this.getTokens(payload);
+
     return {
-      user,
-      tokens: {
-        access_token: await this.jwtService.signAsync(payload, {
-          expiresIn: '1h',
-          secret: process.env.JWT_SECRET_KEY,
-        }),
-        refresh_token: await this.jwtService.signAsync(payload, {
-          expiresIn: '7d',
-          secret: process.env.JWT_REFRESH_TOKEN_KEY,
-        }),
-      },
+      ...user,
+      access_token,
+      refresh_token,
     };
   }
 
-  async validatUser(userDto: AuthLoginDto): Promise<User> {
+  private async getTokens(payload: {
+    sub: string;
+    username: string;
+  }): Promise<GetTokens> {
+    return {
+      access_token: await this.jwtService.signAsync(payload, {
+        expiresIn: _env.ACCESS_TOKEN_EXPIRY,
+        secret: process.env.JWT_SECRET_KEY,
+      }),
+      refresh_token: await this.jwtService.signAsync(payload, {
+        expiresIn: _env.REFRESH_TOKEN_EXPIRY,
+        secret: process.env.JWT_REFRESH_TOKEN_KEY,
+      }),
+    };
+  }
+
+  async validatUser(userDto: AuthLoginDto): Promise<IUser> {
     const user = await this.usersService.findByEmail(userDto.email);
 
     if (!user || !(await compare(userDto.password, user.password))) {
@@ -42,23 +53,15 @@ export class AuthService {
     const userDataWithoutPassword = { ...user };
     delete userDataWithoutPassword.password;
 
-    return user;
+    return userDataWithoutPassword;
   }
 
-  async refreshToken(user: any) {
-    const payload = { sub: user.id, username: user.username };
+  async refreshToken(payloadDto: {
+    sub: string;
+    username: string;
+  }): Promise<GetTokens> {
+    const payload = { sub: payloadDto.sub, username: payloadDto.username };
 
-    return {
-      tokens: {
-        access_token: await this.jwtService.signAsync(payload, {
-          expiresIn: '1h',
-          secret: process.env.JWT_SECRET_KEY,
-        }),
-        refresh_token: await this.jwtService.signAsync(payload, {
-          expiresIn: '7d',
-          secret: process.env.JWT_REFRESH_TOKEN_KEY,
-        }),
-      },
-    };
+    return await this.getTokens(payload);
   }
 }

@@ -7,13 +7,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { hash } from 'bcrypt';
-import { User } from '@prisma/client';
+import { IUser } from 'src/auth/types/auth.types';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<IUser> {
     const user = await this.databaseService.user.findUnique({
       where: { email: createUserDto.email },
     });
@@ -25,19 +25,32 @@ export class UsersService {
         ...createUserDto,
         password: await hash(createUserDto.password, 10),
       },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: false,
+        role: true,
+      },
     });
 
-    const userDataWithoutPassword = { ...newUser };
-    delete userDataWithoutPassword.password;
-
-    return userDataWithoutPassword;
+    return newUser;
   }
 
-  async findByEmail(email: string): Promise<User | undefined> {
-    return await this.databaseService.user.findUnique({ where: { email } });
+  async findByEmail(email: string): Promise<IUser> {
+    return await this.databaseService.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: true,
+        role: true,
+      },
+    });
   }
 
-  async findAll() {
+  async findAll(): Promise<IUser[]> {
     return await this.databaseService.user.findMany({
       where: { role: 'USER' },
       select: {
@@ -50,7 +63,7 @@ export class UsersService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<IUser> {
     return await this.databaseService.user.findUnique({
       where: { id },
       select: {
@@ -67,7 +80,7 @@ export class UsersService {
     return `This action updates a #${id} ${updateUserDto}user`;
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<IUser> {
     const user = await this.databaseService.user.findUnique({ where: { id } });
 
     if (!user) throw new BadRequestException('User not found');
@@ -79,14 +92,10 @@ export class UsersService {
         email: true,
         username: true,
         password: false,
-        role: false,
+        role: true,
       },
     });
 
-    return {
-      statusCode: 200,
-      message: 'successful',
-      data: delectedUser,
-    };
+    return delectedUser;
   }
 }
