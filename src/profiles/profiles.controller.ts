@@ -19,6 +19,8 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/roles.guard';
 import { ApiResponse } from 'src/types/response';
 import { ProfileResponse } from './types/response';
+import { Roles } from 'src/decorators/roles.docorator';
+import { Role } from '@prisma/client';
 
 @Controller('profiles')
 export class ProfilesController {
@@ -40,9 +42,19 @@ export class ProfilesController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
   @Get()
-  findAll() {
-    return this.profilesService.findAll();
+  async findAll(): Promise<ApiResponse<ProfileResponse[]>> {
+    const userProfiles = await this.profilesService.findAll();
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      results: userProfiles.length,
+      data: userProfiles,
+    };
   }
 
   @Get(':id')

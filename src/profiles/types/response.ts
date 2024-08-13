@@ -4,5 +4,5 @@ export type ProfileResponse = {
   bio: string;
   userId: string;
   createdAt: Date;
-  updatedAt?: string;
+  updatedAt?: Date;
 };

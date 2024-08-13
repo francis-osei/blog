@@ -29,8 +29,11 @@ export class ProfilesService {
     });
   }
 
-  findAll() {
-    return `This action returns all profiles`;
+  async findAll(): Promise<ProfileResponse[]> {
+    const userProfiles = await this.databaseService.profile.findMany({
+      where: { user: { role: 'USER' } },
+    });
+    return userProfiles;
   }
 
   findOne(id: number) {
