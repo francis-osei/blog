@@ -57,8 +57,4 @@ export class ProfilesService {
 
     return updatedProfile;
   }
-
-  remove(id: number) {
-    return `This action removes a #${id} profile`;
-  }
 }

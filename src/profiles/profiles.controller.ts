@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Req,
   HttpCode,
   HttpStatus,
@@ -83,10 +82,5 @@ export class ProfilesController {
       message: 'Successful',
       data: await this.profilesService.update(id, updateProfileDto),
     };
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.profilesService.remove(+id);
   }
 }
