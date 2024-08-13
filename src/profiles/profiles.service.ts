@@ -36,8 +36,11 @@ export class ProfilesService {
     return userProfiles;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} profile`;
+  async findOne(id: string): Promise<ProfileResponse> {
+    const profile = await this.databaseService.profile.findUnique({
+      where: { id },
+    });
+    return profile;
   }
 
   update(id: number, updateProfileDto: UpdateProfileDto) {

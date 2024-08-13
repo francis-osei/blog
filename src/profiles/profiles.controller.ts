@@ -57,9 +57,17 @@ export class ProfilesController {
     };
   }
 
+  @HttpCode(HttpStatus.OK)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.profilesService.findOne(+id);
+  async findOne(
+    @Param('id') id: string,
+  ): Promise<ApiResponse<ProfileResponse>> {
+    const profile = await this.profilesService.findOne(id);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: profile,
+    };
   }
 
   @Patch(':id')
