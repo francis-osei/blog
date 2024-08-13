@@ -11,6 +11,7 @@ async function bootstrap() {
   const redisClient = new Redis();
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.setGlobalPrefix('api/v1');
 
   app.set('trust proxy', 1);
 
