@@ -70,9 +70,19 @@ export class ProfilesController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER)
+  @HttpCode(HttpStatus.OK)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
-    return this.profilesService.update(+id, updateProfileDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ): Promise<ApiResponse<ProfileResponse>> {
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: await this.profilesService.update(id, updateProfileDto),
+    };
   }
 
   @Delete(':id')

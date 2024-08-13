@@ -43,8 +43,19 @@ export class ProfilesService {
     return profile;
   }
 
-  update(id: number, updateProfileDto: UpdateProfileDto) {
-    return `This action updates a #${id} ${updateProfileDto} profile`;
+  async update(
+    id: string,
+    updateProfileDto: UpdateProfileDto,
+  ): Promise<ProfileResponse> {
+    const updatedProfile = await this.databaseService.profile.update({
+      where: { id },
+      data: {
+        bio: updateProfileDto.bio,
+        profileImage: updateProfileDto.profileImage,
+      },
+    });
+
+    return updatedProfile;
   }
 
   remove(id: number) {
