@@ -16,8 +16,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Request } from 'express';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/roles.guard';
-import { ApiResponse } from 'src/types/response';
-import { ProfileResponse } from './types/response';
+import { ApiResponse } from 'src/types/api.response';
+import { ProfileReturn } from './types/profiles.response';
 import { Roles } from 'src/decorators/roles.docorator';
 import { Role } from '@prisma/client';
 
@@ -31,7 +31,7 @@ export class ProfilesController {
   async create(
     @Req() req: Request,
     @Body() createProfileDto: CreateProfileDto,
-  ): Promise<ApiResponse<ProfileResponse>> {
+  ): Promise<ApiResponse<ProfileReturn>> {
     const { userId } = req.session.user;
 
     return {
@@ -45,7 +45,7 @@ export class ProfilesController {
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @Get()
-  async findAll(): Promise<ApiResponse<ProfileResponse[]>> {
+  async findAll(): Promise<ApiResponse<ProfileReturn[]>> {
     const userProfiles = await this.profilesService.findAll();
 
     return {
@@ -58,14 +58,11 @@ export class ProfilesController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-  ): Promise<ApiResponse<ProfileResponse>> {
-    const profile = await this.profilesService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ApiResponse<ProfileReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
-      data: profile,
+      data: await this.profilesService.findOne(id),
     };
   }
 
@@ -76,7 +73,7 @@ export class ProfilesController {
   async update(
     @Param('id') id: string,
     @Body() updateProfileDto: UpdateProfileDto,
-  ): Promise<ApiResponse<ProfileResponse>> {
+  ): Promise<ApiResponse<ProfileReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',

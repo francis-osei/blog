@@ -7,13 +7,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { hash } from 'bcrypt';
-import { IUser } from 'src/auth/types/auth.types';
+import { userReturn } from './types/uses.return';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async create(createUserDto: CreateUserDto): Promise<IUser> {
+  async create(createUserDto: CreateUserDto): Promise<userReturn> {
     const user = await this.databaseService.user.findUnique({
       where: { email: createUserDto.email },
     });
@@ -37,7 +37,7 @@ export class UsersService {
     return newUser;
   }
 
-  async findByEmail(email: string): Promise<IUser> {
+  async findByEmailOr(email: string): Promise<userReturn> {
     return await this.databaseService.user.findUnique({
       where: { email },
       select: {
@@ -50,7 +50,7 @@ export class UsersService {
     });
   }
 
-  async findAll(): Promise<IUser[]> {
+  async findAll(): Promise<userReturn[]> {
     return await this.databaseService.user.findMany({
       where: { role: 'USER' },
       select: {
@@ -63,7 +63,7 @@ export class UsersService {
     });
   }
 
-  async findOne(id: string): Promise<IUser> {
+  async findOne(id: string): Promise<userReturn> {
     return await this.databaseService.user.findUnique({
       where: { id },
       select: {
@@ -80,7 +80,7 @@ export class UsersService {
     return `This action updates a #${id} ${updateUserDto}user`;
   }
 
-  async remove(id: string): Promise<IUser> {
+  async remove(id: string): Promise<userReturn> {
     const user = await this.databaseService.user.findUnique({ where: { id } });
 
     if (!user) throw new BadRequestException('User not found');
@@ -89,10 +89,10 @@ export class UsersService {
       where: { id },
       select: {
         id: true,
-        email: true,
-        username: true,
+        email: false,
+        username: false,
         password: false,
-        role: true,
+        role: false,
       },
     });
 

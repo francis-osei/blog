@@ -1,4 +1,4 @@
-export type ProfileResponse = {
+export type ProfileReturn = {
   id: string;
   profileImage: string;
   bio: string;

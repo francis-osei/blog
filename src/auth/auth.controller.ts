@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
 import { SessionData } from 'express-session';
 import { RefreshGuard } from 'src/guards/refresh.guard';
-import { ApiResponse, RefreshJwtToken } from 'src/types/response';
+import { ApiResponse } from 'src/types/api.response';
 import { GetTokens, IUser } from './types/auth.types';
 
 @Controller('auth')
@@ -64,7 +64,7 @@ export class AuthController {
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refreshToken(@Request() req): Promise<RefreshJwtToken> {
+  async refreshToken(@Request() req): Promise<ApiResponse<GetTokens>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'successful',

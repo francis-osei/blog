@@ -16,16 +16,18 @@ import { AuthGuard } from 'src/guards/auth.guard';
 import { Roles } from 'src/decorators/roles.docorator';
 import { Role } from '@prisma/client';
 import { RoleGuard } from 'src/guards/roles.guard';
-import { ApiResponse } from 'src/types/response';
-import { IUser } from 'src/auth/types/auth.types';
+import { ApiResponse } from 'src/types/api.response';
+import { userReturn } from './types/uses.return';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @Get()
-  async findAll(): Promise<ApiResponse<IUser[]>> {
+  async findAll(): Promise<ApiResponse<userReturn[]>> {
     const users = await this.usersService.findAll();
     return {
       statusCode: HttpStatus.OK,
@@ -37,12 +39,11 @@ export class UsersController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ApiResponse<IUser>> {
-    const user = await this.usersService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ApiResponse<userReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
-      data: user,
+      data: await this.usersService.findOne(id),
     };
   }
 
@@ -53,16 +54,15 @@ export class UsersController {
 
   @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.ADMIN)
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ApiResponse<IUser>> {
-    const removeUser = await this.usersService.remove(id);
+  ): Promise<ApiResponse<userReturn>> {
     return {
-      statusCode: HttpStatus.OK,
+      statusCode: HttpStatus.NO_CONTENT,
       message: 'Successful',
-      data: removeUser,
+      data: await this.usersService.remove(id),
     };
   }
 }

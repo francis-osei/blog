@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { ProfileResponse } from './types/response';
+import { ProfileReturn } from './types/profiles.response';
 
 @Injectable()
 export class ProfilesService {
@@ -11,7 +11,7 @@ export class ProfilesService {
   create(
     createProfileDto: CreateProfileDto,
     userId: string,
-  ): Promise<ProfileResponse> {
+  ): Promise<ProfileReturn> {
     return this.databaseService.profile.create({
       data: {
         bio: createProfileDto.bio,
@@ -29,24 +29,22 @@ export class ProfilesService {
     });
   }
 
-  async findAll(): Promise<ProfileResponse[]> {
-    const userProfiles = await this.databaseService.profile.findMany({
+  async findAll(): Promise<ProfileReturn[]> {
+    return await this.databaseService.profile.findMany({
       where: { user: { role: 'USER' } },
     });
-    return userProfiles;
   }
 
-  async findOne(id: string): Promise<ProfileResponse> {
-    const profile = await this.databaseService.profile.findUnique({
+  async findOne(id: string): Promise<ProfileReturn> {
+    return await this.databaseService.profile.findUnique({
       where: { id },
     });
-    return profile;
   }
 
   async update(
     id: string,
     updateProfileDto: UpdateProfileDto,
-  ): Promise<ProfileResponse> {
+  ): Promise<ProfileReturn> {
     const updatedProfile = await this.databaseService.profile.update({
       where: { id },
       data: {
