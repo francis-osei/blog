@@ -37,9 +37,29 @@ export class UsersService {
     return newUser;
   }
 
-  async findByEmailOr(email: string): Promise<userReturn> {
+  async findByEmail(email: string): Promise<userReturn | null> {
     return await this.databaseService.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: true,
+        role: true,
+      },
+    });
+  }
+  async findById(id: string): Promise<userReturn | null> {
+    return await this.getuser(id);
+  }
+
+  private async getuser(identifier: string): Promise<userReturn | null> {
+    const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
+
+    const where = isEmail ? { email: identifier } : { id: identifier };
+
+    return await this.databaseService.user.findUnique({
+      where,
       select: {
         id: true,
         email: true,

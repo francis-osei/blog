@@ -7,10 +7,10 @@ export type Login = IUser & {
 
 export type IUser = {
   id: string;
-  email: string;
-  username: string;
+  email?: string;
+  username?: string;
   password?: string;
-  role: $Enums.Role;
+  role?: $Enums.Role;
 };
 
 export type GetTokens = {

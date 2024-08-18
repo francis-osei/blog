@@ -15,7 +15,8 @@ import { AuthLoginDto } from './dto/auth-login.dto';
 import { SessionData } from 'express-session';
 import { RefreshGuard } from 'src/guards/refresh.guard';
 import { ApiResponse } from 'src/types/api.response';
-import { GetTokens, IUser } from './types/auth.types';
+import { userReturn } from 'src/users/types/uses.return';
+import { GetTokens } from './types/auth.types';
 
 @Controller('auth')
 export class AuthController {
@@ -28,7 +29,7 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() createUserDto: CreateUserDto,
-  ): Promise<ApiResponse<IUser>> {
+  ): Promise<ApiResponse<userReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
@@ -41,7 +42,7 @@ export class AuthController {
   async login(
     @Session() session: SessionData,
     @Body() loginDto: AuthLoginDto,
-  ): Promise<ApiResponse<{ user: IUser; tokens: GetTokens }>> {
+  ): Promise<ApiResponse<{ user: userReturn; tokens: GetTokens }>> {
     const { access_token, refresh_token, ...user } =
       await this.authservice.login(loginDto);
 
