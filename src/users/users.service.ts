@@ -38,16 +38,7 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<userReturn | null> {
-    return await this.databaseService.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        password: true,
-        role: true,
-      },
-    });
+    return await this.getuser(email);
   }
   async findById(id: string): Promise<userReturn | null> {
     return await this.getuser(id);
