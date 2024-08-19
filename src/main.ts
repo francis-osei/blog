@@ -5,6 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 import * as session from 'express-session';
 import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const RedisStore = connectRedis(session);
@@ -12,6 +13,8 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api/v1');
+
+  app.use(helmet());
 
   app.set('trust proxy', 1);
 
