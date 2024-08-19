@@ -1,0 +1,9 @@
+# #!/usr/bin/env sh
+# . "$(dirname -- "$0")/_/husky.sh"
+. "$(dirname "$0")/common.sh"
+
+yarn build ||
+	(
+		echo 'Build failed: View the errors above to see why.'
+		false
+	)
