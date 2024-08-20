@@ -48,8 +48,21 @@ export class PostsService {
     });
   }
 
-  update(id: number, updatePostDto: UpdatePostDto): string {
-    return `This action updates a #${id} ${updatePostDto} post`;
+  async update(
+    id: string,
+    userId: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<PostReturn> {
+    return this.databaseService.post.update({
+      where: { id, authorId: userId },
+      data: {
+        title: updatePostDto.title,
+        slug: this.getSlug(updatePostDto.title),
+        content: updatePostDto.content,
+        summary: updatePostDto.summary,
+        coverImage: updatePostDto.coverImage,
+      },
+    });
   }
 
   remove(id: number): string {

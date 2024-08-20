@@ -77,12 +77,22 @@ export class PostsController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER)
+  @HttpCode(HttpStatus.OK)
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
+    @Req() req: Request,
     @Body() updatePostDto: UpdatePostDto,
-  ): string {
-    return this.postsService.update(+id, updatePostDto);
+  ): Promise<ApiResponse<PostReturn>> {
+    const { userId } = req.session.user;
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: await this.postsService.update(id, userId, updatePostDto),
+    };
   }
 
   @Delete(':id')
