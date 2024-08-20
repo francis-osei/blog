@@ -5,13 +5,10 @@ export class CreatePostDto {
   title: string;
 
   @IsString()
-  author: string;
-
-  @IsString()
   content: string;
 
   @IsString()
-  summary: string;
+  summary?: string;
 
   @IsString()
   coverImage: string;
