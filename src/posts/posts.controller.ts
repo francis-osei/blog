@@ -10,6 +10,7 @@ import {
   HttpStatus,
   HttpCode,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -43,9 +44,27 @@ export class PostsController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER)
+  @HttpCode(HttpStatus.OK)
   @Get()
-  findAll(): string {
-    return this.postsService.findAll();
+  async findAll(
+    @Req() req: Request,
+    @Query('published') published?: 'true' | 'false',
+  ): Promise<ApiResponse<PostReturn[]>> {
+    const { userId } = req.session.user;
+
+    const isPublished =
+      published === 'true' ? true : published === 'false' ? false : null;
+
+    const posts = await this.postsService.findAll(userId, isPublished);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'successful',
+      results: posts.length,
+      data: posts,
+    };
   }
 
   @Get(':id')

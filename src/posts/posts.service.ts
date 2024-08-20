@@ -33,8 +33,13 @@ export class PostsService {
       .replace(/^-+|-+$/g, '');
   }
 
-  findAll(): string {
-    return `This action returns all posts`;
+  findAll(userId: string, published: boolean | null): Promise<PostReturn[]> {
+    return this.databaseService.post.findMany({
+      where: {
+        author: { id: userId },
+        ...(published !== null && { published }),
+      },
+    });
   }
 
   findOne(id: number): string {
