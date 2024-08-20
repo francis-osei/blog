@@ -42,8 +42,10 @@ export class PostsService {
     });
   }
 
-  findOne(id: number): string {
-    return `This action returns a #${id} post`;
+  findOne(id: string): Promise<PostReturn> {
+    return this.databaseService.post.findUnique({
+      where: { id },
+    });
   }
 
   update(id: number, updatePostDto: UpdatePostDto): string {

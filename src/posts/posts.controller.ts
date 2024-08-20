@@ -67,9 +67,14 @@ export class PostsController {
     };
   }
 
+  @HttpCode(HttpStatus.OK)
   @Get(':id')
-  findOne(@Param('id') id: string): string {
-    return this.postsService.findOne(+id);
+  async findOne(@Param('id') id: string): Promise<ApiResponse<PostReturn>> {
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'successful',
+      data: await this.postsService.findOne(id),
+    };
   }
 
   @Patch(':id')
