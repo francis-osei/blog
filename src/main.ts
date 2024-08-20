@@ -7,7 +7,7 @@ import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import helmet from 'helmet';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   const RedisStore = connectRedis(session);
   const redisClient = new Redis();
 
@@ -41,4 +41,5 @@ async function bootstrap() {
 
   await app.listen(3000);
 }
+
 bootstrap();
