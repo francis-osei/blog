@@ -1,15 +1,15 @@
 export type PostReturn = {
   id: string;
-  title: string;
-  slug: string;
-  content: string;
+  title?: string;
+  slug?: string;
+  content?: string;
   summary?: string;
-  published: boolean;
-  createdAt: Date;
+  published?: boolean;
+  createdAt?: Date;
   updatedAt?: Date;
-  parentId: number;
-  authorId: string;
-  coverImage: string;
+  parentId?: number;
+  authorId?: string;
+  coverImage?: string;
   comments?: Comment[] | [];
 };
 
