@@ -65,7 +65,17 @@ export class PostsService {
     });
   }
 
-  remove(id: number): string {
-    return `This action removes a #${id} post`;
+  async remove(id: string, userId: string): Promise<PostReturn> {
+    return await this.databaseService.post.delete({
+      where: { id, authorId: userId },
+      select: {
+        id: true,
+        title: false,
+        slug: false,
+        summary: false,
+        content: false,
+        coverImage: false,
+      },
+    });
   }
 }

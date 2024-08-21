@@ -95,8 +95,20 @@ export class PostsController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER)
+  @HttpCode(HttpStatus.OK)
   @Delete(':id')
-  remove(@Param('id') id: string): string {
-    return this.postsService.remove(+id);
+  async remove(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ApiResponse<PostReturn>> {
+    const { userId } = req.session.user;
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: await this.postsService.remove(id, userId),
+    };
   }
 }
