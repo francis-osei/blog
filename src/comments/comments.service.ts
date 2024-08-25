@@ -49,7 +49,12 @@ export class CommentsService {
     });
   }
 
-  remove(id: number): string {
-    return `This action removes a #${id} comment`;
+  remove(id: string, userId: string): Promise<CommentReturn> {
+    return this.databaseService.comment.delete({
+      where: { id, authorId: userId },
+      select: {
+        id: true,
+      },
+    });
   }
 }

@@ -73,8 +73,19 @@ export class CommentsController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER)
+  @HttpCode(HttpStatus.OK)
   @Delete(':id')
-  remove(@Param('id') id: string): string {
-    return this.commentsService.remove(+id);
+  async remove(
+    @Req() req: Request,
+    @Param('id') id: string,
+  ): Promise<ApiResponse<CommentReturn>> {
+    const { userId } = req.session.user;
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: await this.commentsService.remove(id, userId),
+    };
   }
 }
