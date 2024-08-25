@@ -30,8 +30,23 @@ export class CommentsService {
     return `This action returns a #${id} comment`;
   }
 
-  update(id: number, updateCommentDto: UpdateCommentDto): string {
-    return `This action updates a #${id} comment ${updateCommentDto} `;
+  update(
+    id: string,
+    userId: string,
+    updateCommentDto: UpdateCommentDto,
+  ): Promise<CommentReturn> {
+    return this.databaseService.comment.update({
+      where: { id, authorId: userId },
+      data: { content: updateCommentDto.content },
+      select: {
+        id: true,
+        content: true,
+        createdAt: false,
+        authorId: false,
+        postId: true,
+        updatedAt: true,
+      },
+    });
   }
 
   remove(id: number): string {

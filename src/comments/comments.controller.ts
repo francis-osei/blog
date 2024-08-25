@@ -55,12 +55,22 @@ export class CommentsController {
     return this.commentsService.findOne(+id);
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER)
+  @HttpCode(HttpStatus.OK)
   @Patch(':id')
-  update(
+  async update(
+    @Req() req: Request,
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
-  ): string {
-    return this.commentsService.update(+id, updateCommentDto);
+  ): Promise<ApiResponse<CommentReturn>> {
+    const { userId } = req.session.user;
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: await this.commentsService.update(id, userId, updateCommentDto),
+    };
   }
 
   @Delete(':id')
