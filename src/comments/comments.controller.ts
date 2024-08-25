@@ -45,9 +45,18 @@ export class CommentsController {
     };
   }
 
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
   @Get()
-  findAll(): string {
-    return this.commentsService.findAll();
+  async findAll(): Promise<ApiResponse<CommentReturn[]>> {
+    const comments = await this.commentsService.findAll();
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      results: comments.length,
+      data: comments,
+    };
   }
 
   @Get(':id')

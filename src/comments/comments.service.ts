@@ -22,8 +22,8 @@ export class CommentsService {
     });
   }
 
-  findAll(): string {
-    return `This action returns all comments`;
+  findAll(): Promise<CommentReturn[]> {
+    return this.databaseService.comment.findMany();
   }
 
   findOne(id: number): string {
