@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
@@ -58,7 +59,9 @@ export class ProfilesController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ApiResponse<ProfileReturn>> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiResponse<ProfileReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
@@ -71,7 +74,7 @@ export class ProfilesController {
   @HttpCode(HttpStatus.OK)
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProfileDto: UpdateProfileDto,
   ): Promise<ApiResponse<ProfileReturn>> {
     return {

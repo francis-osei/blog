@@ -39,7 +39,9 @@ export class UsersController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ApiResponse<userReturn>> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiResponse<userReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
@@ -49,7 +51,7 @@ export class UsersController {
 
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): string {
     return this.usersService.update(+id, updateUserDto);

@@ -10,6 +10,7 @@ import {
   HttpStatus,
   HttpCode,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -31,7 +32,7 @@ export class CommentsController {
   @HttpCode(HttpStatus.OK)
   @Post(':id')
   async create(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<ApiResponse<CommentReturn>> {
@@ -60,7 +61,7 @@ export class CommentsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): string {
+  findOne(@Param('id', ParseUUIDPipe) id: string): string {
     return this.commentsService.findOne(+id);
   }
 
@@ -70,7 +71,7 @@ export class CommentsController {
   @Patch(':id')
   async update(
     @Req() req: Request,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCommentDto: UpdateCommentDto,
   ): Promise<ApiResponse<CommentReturn>> {
     const { userId } = req.session.user;
@@ -88,7 +89,7 @@ export class CommentsController {
   @Delete(':id')
   async remove(
     @Req() req: Request,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApiResponse<CommentReturn>> {
     const { userId } = req.session.user;
     return {

@@ -11,6 +11,7 @@ import {
   HttpCode,
   UseGuards,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -69,7 +70,9 @@ export class PostsController {
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ApiResponse<PostReturn>> {
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ApiResponse<PostReturn>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'successful',
@@ -82,7 +85,7 @@ export class PostsController {
   @HttpCode(HttpStatus.OK)
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,
     @Body() updatePostDto: UpdatePostDto,
   ): Promise<ApiResponse<PostReturn>> {
@@ -100,7 +103,7 @@ export class PostsController {
   @HttpCode(HttpStatus.OK)
   @Delete(':id')
   async remove(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request,
   ): Promise<ApiResponse<PostReturn>> {
     const { userId } = req.session.user;
