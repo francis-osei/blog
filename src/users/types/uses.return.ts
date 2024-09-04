@@ -6,4 +6,5 @@ export type userReturn = {
   username?: string;
   password?: string;
   role?: $Enums.Role;
+  isAuthenticated?: boolean;
 };

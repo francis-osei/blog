@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { compare } from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
@@ -16,6 +20,10 @@ export class AuthService {
 
   async login(authLoginDto: AuthLoginDto): Promise<Login> {
     const user = await this.validatUser(authLoginDto);
+
+    if (!user) throw new BadRequestException('Invaild user');
+
+    await this.usersService.authenticateUser(user.id);
 
     const payload = { sub: user.id, username: user.username };
 

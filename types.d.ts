@@ -6,6 +6,7 @@ declare module 'express-session' {
       userId: string;
       username: string;
       role: [Role];
+      isAuthenticated: boolean;
     };
   }
 }

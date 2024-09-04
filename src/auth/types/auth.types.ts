@@ -7,6 +7,7 @@ export type Login = IUser & {
 
 export type IUser = {
   id: string;
+  isAuthenticated?: boolean;
   email?: string;
   username?: string;
   password?: string;

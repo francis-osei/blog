@@ -50,6 +50,7 @@ export class AuthController {
       userId: user.id,
       username: user.username,
       role: [user.role],
+      isAuthenticated: user.isAuthenticated,
     };
 
     return {

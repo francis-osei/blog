@@ -44,6 +44,13 @@ export class UsersService {
     return await this.getuser(id);
   }
 
+  async authenticateUser(userId: string): Promise<userReturn> {
+    return this.databaseService.user.update({
+      where: { id: userId },
+      data: { isAuthenticated: true },
+    });
+  }
+
   private async getuser(identifier: string): Promise<userReturn | null> {
     const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
 
@@ -57,6 +64,7 @@ export class UsersService {
         username: true,
         password: true,
         role: true,
+        isAuthenticated: true,
       },
     });
   }
@@ -70,6 +78,7 @@ export class UsersService {
         username: true,
         password: false,
         role: true,
+        isAuthenticated: true,
       },
     });
   }
@@ -83,6 +92,7 @@ export class UsersService {
         username: true,
         password: false,
         role: true,
+        isAuthenticated: true,
       },
     });
   }
@@ -104,6 +114,7 @@ export class UsersService {
         username: false,
         password: false,
         role: false,
+        isAuthenticated: true,
       },
     });
 

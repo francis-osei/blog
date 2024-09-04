@@ -29,6 +29,7 @@ export class UsersController {
   @Get()
   async findAll(): Promise<ApiResponse<userReturn[]>> {
     const users = await this.usersService.findAll();
+
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
