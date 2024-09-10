@@ -6,6 +6,7 @@ import * as session from 'express-session';
 import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import helmet from 'helmet';
+import { HttpExceptionFilter } from './comments/exception-filters/http-exception.filter';
 
 async function bootstrap(): Promise<void> {
   const RedisStore = connectRedis(session);
@@ -13,6 +14,7 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api/v1');
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.use(helmet());
 
