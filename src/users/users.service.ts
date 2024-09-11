@@ -48,6 +48,14 @@ export class UsersService {
     return this.databaseService.user.update({
       where: { id: userId },
       data: { isAuthenticated: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        password: false,
+        role: true,
+        isAuthenticated: true,
+      },
     });
   }
 

@@ -19,11 +19,11 @@ export class AuthService {
   ) {}
 
   async login(authLoginDto: AuthLoginDto): Promise<Login> {
-    const user = await this.validatUser(authLoginDto);
+    let user = await this.validatUser(authLoginDto);
 
     if (!user) throw new BadRequestException('Invaild user');
 
-    await this.usersService.authenticateUser(user.id);
+    user = await this.usersService.authenticateUser(user.id);
 
     const payload = { sub: user.id, username: user.username };
 
@@ -59,10 +59,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const userDataWithoutPassword = { ...user };
-    delete userDataWithoutPassword.password;
-
-    return userDataWithoutPassword;
+    return user;
   }
 
   async refreshToken(payloadDto: {
