@@ -15,12 +15,12 @@ import {
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { ApiResponse } from 'src/types/api.response';
+import { ApiResponse } from '../types/api.response';
 import { CommentReturn } from './types/comments.type';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RoleGuard } from 'src/guards/roles.guard';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/roles.guard';
 import { Role } from '@prisma/client';
-import { Roles } from 'src/decorators/roles.docorator';
+import { Roles } from '../decorators/roles.docorator';
 import { Request } from 'express';
 
 @Controller('comments')

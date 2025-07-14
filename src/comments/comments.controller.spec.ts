@@ -1,20 +1,153 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpStatus } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
+// import { CommentReturn } from './types/comments.type';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/roles.guard';
+import { CreateCommentDto } from './dto/create-comment.dto';
+// import { UpdateCommentDto } from './dto/update-comment.dto';
+import { Request } from 'express';
 
 describe('CommentsController', () => {
   let controller: CommentsController;
+  let service: CommentsService;
+
+  const mockComment = {
+    id: '1',
+    content: 'First comment',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    postId: 'post1',
+    authorId: 'user1',
+    author: { id: 'user1', name: 'Francis' },
+    post: { id: 'post1', title: 'Mock Post' },
+  };
+
+  const mockCommentsService = {
+    findAll: jest.fn().mockResolvedValue([mockComment]),
+    create: jest
+      .fn()
+      .mockImplementation(
+        (
+          createCommentDto: CreateCommentDto,
+          userId: string,
+          postId: string,
+        ) => {
+          return Promise.resolve({
+            userId,
+            postId,
+            ...createCommentDto,
+          });
+        },
+      ),
+    findOne: jest.fn().mockResolvedValue('Single comment'),
+    remove: jest.fn().mockResolvedValue(mockComment),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CommentsController],
-      providers: [CommentsService],
+      providers: [
+        {
+          provide: CommentsService,
+          useValue: mockCommentsService,
+        },
+        { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
+        {
+          provide: AuthGuard,
+          useValue: { canActivate: jest.fn().mockReturnValue(true) },
+        },
+        {
+          provide: RoleGuard,
+          useValue: { canActivate: jest.fn().mockReturnValue(true) },
+        },
+      ],
     }).compile();
 
     controller = module.get<CommentsController>(CommentsController);
+    service = module.get<CommentsService>(CommentsService);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  describe('create', () => {
+    it('should create a comment and return ApiResponse', async () => {
+      const dto: CreateCommentDto = {
+        content: 'Hello world',
+      };
+
+      const req = {
+        session: {
+          user: {
+            userId: 'user-id',
+          },
+        },
+      } as Request;
+
+      mockCommentsService.create.mockResolvedValue(mockComment);
+
+      const result = await controller.create('post-id', req, dto);
+
+      expect(service.create).toHaveBeenCalledWith(dto, 'user-id', 'post-id');
+      expect(result).toEqual({
+        statusCode: HttpStatus.OK,
+        message: 'Successful',
+        data: mockComment,
+      });
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return all comments in ApiResponse', async () => {
+      mockCommentsService.findAll.mockResolvedValue([mockComment]);
+
+      const result = await controller.findAll();
+
+      expect(service.findAll).toHaveBeenCalled();
+      expect(result).toEqual({
+        statusCode: HttpStatus.OK,
+        message: 'Successful',
+        results: [mockComment].length,
+        data: [mockComment],
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a single comment', () => {
+      mockCommentsService.findOne.mockReturnValue('Single comment');
+
+      const result = controller.findOne('1');
+
+      expect(service.findOne).toHaveBeenCalledWith(1);
+      expect(result).toBe('Single comment');
+    });
+  });
+
+  describe('remove', () => {
+    it('should delete a comment and return ApiResponse', async () => {
+      const req = {
+        session: {
+          user: {
+            userId: 'user-id',
+          },
+        },
+      } as Request;
+
+      mockCommentsService.remove.mockResolvedValue(mockComment);
+
+      const result = await controller.remove(req, '1');
+
+      expect(service.remove).toHaveBeenCalledWith('1', 'user-id');
+      expect(result).toEqual({
+        statusCode: HttpStatus.OK,
+        message: 'Successful',
+        data: mockComment,
+      });
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 });

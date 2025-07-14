@@ -15,11 +15,11 @@ import { ProfilesService } from './profiles.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Request } from 'express';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RoleGuard } from 'src/guards/roles.guard';
-import { ApiResponse } from 'src/types/api.response';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/roles.guard';
+import { ApiResponse } from '../types/api.response';
 import { ProfileReturn } from './types/profiles.response';
-import { Roles } from 'src/decorators/roles.docorator';
+import { Roles } from '../decorators/roles.docorator';
 import { Role } from '@prisma/client';
 
 @Controller('profiles')

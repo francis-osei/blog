@@ -12,11 +12,11 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { Roles } from 'src/decorators/roles.docorator';
+import { AuthGuard } from '../guards/auth.guard';
+import { Roles } from '../decorators/roles.docorator';
 import { Role } from '@prisma/client';
-import { RoleGuard } from 'src/guards/roles.guard';
-import { ApiResponse } from 'src/types/api.response';
+import { RoleGuard } from '../guards/roles.guard';
+import { ApiResponse } from '../types/api.response';
 import { userReturn } from './types/uses.return';
 
 @Controller('users')

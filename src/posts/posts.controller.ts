@@ -18,11 +18,11 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostReturn } from './types/posts.return';
 import { Request } from 'express';
-import { AuthGuard } from 'src/guards/auth.guard';
-import { RoleGuard } from 'src/guards/roles.guard';
-import { Roles } from 'src/decorators/roles.docorator';
+import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.docorator';
 import { Role } from '@prisma/client';
-import { ApiResponse } from 'src/types/api.response';
+import { ApiResponse } from '../types/api.response';
 
 @Controller('posts')
 export class PostsController {

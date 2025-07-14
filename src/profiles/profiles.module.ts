@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { ProfilesController } from './profiles.controller';
-import { DatabaseService } from 'src/database/database.service';
+import { DatabaseService } from '../database/database.service';
 import { JwtService } from '@nestjs/jwt';
 
 @Module({
