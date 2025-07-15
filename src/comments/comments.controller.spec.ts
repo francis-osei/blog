@@ -169,6 +169,29 @@ describe('CommentsController', () => {
         data: [mockComment],
       });
     });
+
+    it('should return empty list when no comment exist', async () => {
+      mockCommentsService.findAll.mockResolvedValue([]);
+
+      const result = await controller.findAll();
+
+      expect(service.findAll).toHaveBeenCalled();
+      expect(result).toEqual({
+        statusCode: HttpStatus.OK,
+        message: 'Successful',
+        results: 0,
+        data: [],
+      });
+    });
+
+    it('should throw error if service throws', async () => {
+      mockCommentsService.findAll.mockRejectedValue(
+        new Error('Unexpected failure'),
+      );
+
+      await expect(controller.findAll()).rejects.toThrow('Unexpected failure');
+      expect(service.findAll).toHaveBeenCalled();
+    });
   });
 
   describe('findOne', () => {
