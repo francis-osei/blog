@@ -198,6 +198,68 @@ describe('CommentsController', () => {
         },
       });
     });
+
+    it('should throw if session is missing', async () => {
+      const req = {} as Request;
+
+      await expect(controller.update(req, commentId, dto)).rejects.toThrow();
+    });
+
+    it('should throw if session.user is missing', async () => {
+      const req = { session: {} } as unknown as Request;
+
+      await expect(controller.update(req, commentId, dto)).rejects.toThrow();
+    });
+
+    it('should throw NotFoundException if comment not found', async () => {
+      const req = {
+        session: { user: { userId } },
+      } as unknown as Request;
+
+      mockCommentsService.update.mockRejectedValueOnce({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: 'Comment not found',
+      });
+
+      await expect(controller.update(req, commentId, dto)).rejects.toEqual({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: 'Comment not found',
+      });
+
+      expect(service.update).toHaveBeenCalledWith(commentId, userId, dto);
+    });
+
+    it('should throw ForbiddenException if user is not the author', async () => {
+      const req = {
+        session: { user: { userId } },
+      } as unknown as Request;
+
+      mockCommentsService.update.mockRejectedValueOnce({
+        statusCode: HttpStatus.FORBIDDEN,
+        message: 'Forbidden',
+      });
+
+      await expect(controller.update(req, commentId, dto)).rejects.toEqual({
+        statusCode: HttpStatus.FORBIDDEN,
+        message: 'Forbidden',
+      });
+
+      expect(service.update).toHaveBeenCalledWith(commentId, userId, dto);
+    });
+
+    it('should throw error if service throws unexpected error', async () => {
+      const req = {
+        session: { user: { userId } },
+      } as unknown as Request;
+
+      mockCommentsService.update.mockRejectedValueOnce(
+        new Error('Database error'),
+      );
+
+      await expect(controller.update(req, commentId, dto)).rejects.toThrow(
+        'Database error',
+      );
+    });
   });
 
   afterEach(() => {
