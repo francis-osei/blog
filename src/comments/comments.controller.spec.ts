@@ -88,11 +88,13 @@ describe('CommentsController', () => {
   });
 
   describe('create', () => {
-    it('should create a comment and return ApiResponse', async () => {
-      const dto: CreateCommentDto = {
-        content: 'Hello world',
-      };
+    const postId = 'post-id';
+    const userId = 'user-id';
+    const dto: CreateCommentDto = {
+      content: 'Hello world',
+    };
 
+    it('should create a comment and return ApiResponse', async () => {
       const req = {
         session: {
           user: {
@@ -103,14 +105,53 @@ describe('CommentsController', () => {
 
       mockCommentsService.create.mockResolvedValue(mockComment);
 
-      const result = await controller.create('post-id', req, dto);
+      const result = await controller.create(postId, req, dto);
 
-      expect(service.create).toHaveBeenCalledWith(dto, 'user-id', 'post-id');
+      expect(service.create).toHaveBeenCalledWith(dto, userId, postId);
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: 'Successful',
         data: mockComment,
       });
+    });
+
+    it('should throw if session is missing', async () => {
+      const req = {} as Request;
+
+      await expect(controller.create(postId, req, dto)).rejects.toThrow();
+    });
+
+    it('should throw if session.user is missing', async () => {
+      const req = { session: {} } as unknown as Request;
+
+      await expect(controller.create(postId, req, dto)).rejects.toThrow();
+    });
+
+    it('should throw an error if service throws', async () => {
+      const req = {
+        session: { user: { userId } },
+      } as unknown as Request;
+
+      mockCommentsService.create.mockRejectedValue(
+        new Error('Database failure'),
+      );
+
+      await expect(controller.create(postId, req, dto)).rejects.toThrow(
+        'Database failure',
+      );
+    });
+
+    it('should throw if DTO is invalid (missing content)', async () => {
+      const req = {
+        session: { user: { userId } },
+      } as unknown as Request;
+
+      const invalidDto = {} as CreateCommentDto;
+
+      // If you use class-validator with ValidationPipe globally, the controller will reject invalid DTOs
+      await expect(
+        controller.create(postId, req, invalidDto),
+      ).rejects.toThrow();
     });
   });
 
