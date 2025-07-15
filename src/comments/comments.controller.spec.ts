@@ -9,6 +9,8 @@ import { RoleGuard } from '../guards/roles.guard';
 import { CreateCommentDto } from './dto/create-comment.dto';
 // import { UpdateCommentDto } from './dto/update-comment.dto';
 import { Request } from 'express';
+import { UpdateCommentDto } from './dto/update-comment.dto';
+import { CommentReturn } from './types/comments.type';
 
 describe('CommentsController', () => {
   let controller: CommentsController;
@@ -43,6 +45,22 @@ describe('CommentsController', () => {
         },
       ),
     findOne: jest.fn().mockResolvedValue('Single comment'),
+    update: jest
+      .fn()
+      .mockImplementation(
+        (
+          id: string,
+          userId: string,
+          updateCommentDto: UpdateCommentDto,
+        ): Promise<CommentReturn> => {
+          return Promise.resolve({
+            id,
+            content: updateCommentDto.content,
+            updatedAt: new Date(),
+            postId: 'mock-post-id',
+          });
+        },
+      ),
     remove: jest.fn().mockResolvedValue(mockComment),
   };
 
@@ -143,6 +161,41 @@ describe('CommentsController', () => {
         statusCode: HttpStatus.OK,
         message: 'Successful',
         data: mockComment,
+      });
+    });
+  });
+
+  describe('update', () => {
+    const commentId = 'comment-id';
+    const userId = 'user-id';
+    const dto: UpdateCommentDto = { content: 'Updated content' };
+
+    it('should update a comment and return ApiResponse (success)', async () => {
+      const req = {
+        session: { user: { userId } },
+      } as unknown as Request;
+
+      const mockUpdatedComment = {
+        id: commentId,
+        content: dto.content,
+        postId: 'mock-post-id',
+        updatedAt: new Date(),
+      };
+
+      mockCommentsService.update.mockResolvedValue(mockUpdatedComment);
+
+      const result = await controller.update(req, commentId, dto);
+
+      expect(service.update).toHaveBeenCalledWith(commentId, userId, dto);
+      expect(result).toEqual({
+        statusCode: HttpStatus.OK,
+        message: 'Successful',
+        data: {
+          id: commentId,
+          content: dto.content,
+          postId: 'mock-post-id',
+          updatedAt: expect.any(Date),
+        },
       });
     });
   });
