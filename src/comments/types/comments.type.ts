@@ -1,5 +1,5 @@
-import { PostReturn } from '../posts/types/posts.return';
-import { userReturn } from '../users/types/uses.return';
+import { PostReturn } from 'src/posts/types/posts.return';
+import { userReturn } from 'src/users/types/uses.return';
 
 export type CommentReturn = {
   id: string;
