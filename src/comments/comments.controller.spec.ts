@@ -206,6 +206,9 @@ describe('CommentsController', () => {
   });
 
   describe('remove', () => {
+    const userId = 'user-id';
+    const commentId = 'comment-id';
+
     it('should delete a comment and return ApiResponse', async () => {
       const req = {
         session: {
@@ -217,14 +220,43 @@ describe('CommentsController', () => {
 
       mockCommentsService.remove.mockResolvedValue(mockComment);
 
-      const result = await controller.remove(req, '1');
+      const result = await controller.remove(req, commentId);
 
-      expect(service.remove).toHaveBeenCalledWith('1', 'user-id');
+      expect(service.remove).toHaveBeenCalledWith(commentId, userId);
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: 'Successful',
         data: mockComment,
       });
+    });
+    it('should throw if session is missing', async () => {
+      const req = {} as unknown as Request;
+
+      await expect(controller.remove(req, commentId)).rejects.toThrow();
+    });
+
+    it('should throw if session.user is missing', async () => {
+      const req = { session: {} } as unknown as Request;
+
+      await expect(controller.remove(req, commentId)).rejects.toThrow();
+    });
+
+    it('should throw if service throws an error', async () => {
+      const req = {
+        session: {
+          user: {
+            userId,
+          },
+        },
+      } as unknown as Request;
+
+      mockCommentsService.remove.mockRejectedValue(
+        new Error('Service failure'),
+      );
+
+      await expect(controller.remove(req, commentId)).rejects.toThrow(
+        'Service failure',
+      );
     });
   });
 
