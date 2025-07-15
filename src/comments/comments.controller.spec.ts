@@ -1,14 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { CommentsController } from './comments.controller';
-import { CommentsService } from './comments.service';
-// import { CommentReturn } from './types/comments.type';
+import { HttpStatus } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/roles.guard';
+import { CommentsController } from './comments.controller';
+import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
-// import { UpdateCommentDto } from './dto/update-comment.dto';
-import { Request } from 'express';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentReturn } from './types/comments.type';
 
@@ -23,7 +22,7 @@ describe('CommentsController', () => {
     updatedAt: new Date(),
     postId: 'post1',
     authorId: 'user1',
-    author: { id: 'user1', name: 'Francis' },
+    author: { id: 'user1', name: 'john' },
     post: { id: 'post1', title: 'Mock Post' },
   };
 
