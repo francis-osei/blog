@@ -15,6 +15,12 @@ describe('CommentsController', () => {
   let controller: CommentsController;
   let service: CommentsService;
 
+  const userId = 'user-id';
+  const postId = 'post-id';
+  const commentId = 'comment-id';
+
+  let req: Request;
+
   const mockComment = {
     id: '1',
     content: 'First comment',
@@ -64,6 +70,10 @@ describe('CommentsController', () => {
   };
 
   beforeEach(async () => {
+    req = {
+      session: { user: { userId } },
+    } as Request;
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CommentsController],
       providers: [
@@ -88,21 +98,11 @@ describe('CommentsController', () => {
   });
 
   describe('create', () => {
-    const postId = 'post-id';
-    const userId = 'user-id';
     const dto: CreateCommentDto = {
       content: 'Hello world',
     };
 
     it('should create a comment and return ApiResponse', async () => {
-      const req = {
-        session: {
-          user: {
-            userId: 'user-id',
-          },
-        },
-      } as Request;
-
       mockCommentsService.create.mockResolvedValue(mockComment);
 
       const result = await controller.create(postId, req, dto);
@@ -116,19 +116,19 @@ describe('CommentsController', () => {
     });
 
     it('should throw if session is missing', async () => {
-      const req = {} as Request;
+      req = {} as Request;
 
       await expect(controller.create(postId, req, dto)).rejects.toThrow();
     });
 
     it('should throw if session.user is missing', async () => {
-      const req = { session: {} } as unknown as Request;
+      req = { session: {} } as unknown as Request;
 
       await expect(controller.create(postId, req, dto)).rejects.toThrow();
     });
 
     it('should throw an error if service throws', async () => {
-      const req = {
+      req = {
         session: { user: { userId } },
       } as unknown as Request;
 
@@ -142,7 +142,7 @@ describe('CommentsController', () => {
     });
 
     it('should throw if DTO is invalid (missing content)', async () => {
-      const req = {
+      req = {
         session: { user: { userId } },
       } as unknown as Request;
 
@@ -206,18 +206,7 @@ describe('CommentsController', () => {
   });
 
   describe('remove', () => {
-    const userId = 'user-id';
-    const commentId = 'comment-id';
-
     it('should delete a comment and return ApiResponse', async () => {
-      const req = {
-        session: {
-          user: {
-            userId: 'user-id',
-          },
-        },
-      } as Request;
-
       mockCommentsService.remove.mockResolvedValue(mockComment);
 
       const result = await controller.remove(req, commentId);
@@ -230,26 +219,18 @@ describe('CommentsController', () => {
       });
     });
     it('should throw if session is missing', async () => {
-      const req = {} as unknown as Request;
+      req = {} as Request;
 
       await expect(controller.remove(req, commentId)).rejects.toThrow();
     });
 
     it('should throw if session.user is missing', async () => {
-      const req = { session: {} } as unknown as Request;
+      req = { session: {} } as Request;
 
       await expect(controller.remove(req, commentId)).rejects.toThrow();
     });
 
     it('should throw if service throws an error', async () => {
-      const req = {
-        session: {
-          user: {
-            userId,
-          },
-        },
-      } as unknown as Request;
-
       mockCommentsService.remove.mockRejectedValue(
         new Error('Service failure'),
       );
@@ -261,12 +242,10 @@ describe('CommentsController', () => {
   });
 
   describe('update', () => {
-    const commentId = 'comment-id';
-    const userId = 'user-id';
     const dto: UpdateCommentDto = { content: 'Updated content' };
 
     it('should update a comment and return ApiResponse (success)', async () => {
-      const req = {
+      req = {
         session: { user: { userId } },
       } as unknown as Request;
 
@@ -295,22 +274,18 @@ describe('CommentsController', () => {
     });
 
     it('should throw if session is missing', async () => {
-      const req = {} as Request;
+      req = {} as Request;
 
       await expect(controller.update(req, commentId, dto)).rejects.toThrow();
     });
 
     it('should throw if session.user is missing', async () => {
-      const req = { session: {} } as unknown as Request;
+      req = { session: {} } as unknown as Request;
 
       await expect(controller.update(req, commentId, dto)).rejects.toThrow();
     });
 
     it('should throw NotFoundException if comment not found', async () => {
-      const req = {
-        session: { user: { userId } },
-      } as unknown as Request;
-
       mockCommentsService.update.mockRejectedValueOnce({
         statusCode: HttpStatus.NOT_FOUND,
         message: 'Comment not found',
@@ -325,10 +300,6 @@ describe('CommentsController', () => {
     });
 
     it('should throw ForbiddenException if user is not the author', async () => {
-      const req = {
-        session: { user: { userId } },
-      } as unknown as Request;
-
       mockCommentsService.update.mockRejectedValueOnce({
         statusCode: HttpStatus.FORBIDDEN,
         message: 'Forbidden',
@@ -343,10 +314,6 @@ describe('CommentsController', () => {
     });
 
     it('should throw error if service throws unexpected error', async () => {
-      const req = {
-        session: { user: { userId } },
-      } as unknown as Request;
-
       mockCommentsService.update.mockRejectedValueOnce(
         new Error('Database error'),
       );
