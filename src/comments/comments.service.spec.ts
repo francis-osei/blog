@@ -88,4 +88,48 @@ describe('CommentsService', () => {
     });
     expect(result).toEqual({ id: 'mock-id', ...dto });
   });
+
+  it('should fail if content if empty', async () => {
+    const dto = { content: '' };
+
+    db.comment.create.mockRejectedValue(new Error('Content cannot be empty'));
+    await expect(service.create(dto, userId, postId)).rejects.toThrow(
+      'Content cannot be empty',
+    );
+  });
+
+  it('should fail if userId is missing', async () => {
+    db.comment.create.mockRejectedValue(new Error('User not found'));
+
+    await expect(service.create(dto, '', postId)).rejects.toThrow(
+      'User not found',
+    );
+  });
+
+  it('should fail if postId is missing', async () => {
+    db.comment.create.mockRejectedValue(new Error('Post not found'));
+
+    await expect(service.create(dto, userId, '')).rejects.toThrow(
+      'Post not found',
+    );
+  });
+
+  it('should handle very long content', async () => {
+    const longContent = 'a'.repeat(10_000);
+    const dto = { content: longContent };
+    const expected = { id: 'mock-id', ...dto };
+
+    db.comment.create.mockResolvedValue(expected);
+
+    const result = await service.create(dto, userId, postId);
+    expect(result).toEqual(expected);
+  });
+
+  it('should throw if database throws an error', async () => {
+    db.comment.create.mockRejectedValue(new Error('DB failure'));
+
+    await expect(service.create(dto, userId, postId)).rejects.toThrow(
+      'DB failure',
+    );
+  });
 });
