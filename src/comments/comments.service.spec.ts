@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DatabaseService } from '../database/database.service';
+import { CommentReturn } from './types/comments.type';
 
 type MockDatabaseService = {
   comment: {
@@ -12,8 +13,8 @@ type MockDatabaseService = {
   };
 };
 
-const mockComment = {
-  id: '1',
+const mockComment: CommentReturn = {
+  id: 'mock-id',
   content: 'First comment',
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -73,63 +74,94 @@ describe('CommentsService', () => {
     jest.clearAllMocks();
   });
 
-  it('should create commnet successfully', async () => {
-    db.comment.create.mockResolvedValue({ id: 'mock-id', ...dto });
+  describe('create', () => {
+    it('should create commnet successfully', async () => {
+      db.comment.create.mockResolvedValue({ id: 'mock-id', ...dto });
 
-    const result = await service.create(dto, userId, postId);
+      const result = await service.create(dto, userId, postId);
 
-    expect(db.comment.create).toHaveBeenCalled();
-    expect(db.comment.create).toHaveBeenCalledWith({
-      data: {
-        content: dto.content,
-        author: { connect: { id: userId } },
-        post: { connect: { id: postId } },
-      },
+      expect(db.comment.create).toHaveBeenCalled();
+      expect(db.comment.create).toHaveBeenCalledWith({
+        data: {
+          content: dto.content,
+          author: { connect: { id: userId } },
+          post: { connect: { id: postId } },
+        },
+      });
+      expect(result).toEqual({ id: 'mock-id', ...dto });
     });
-    expect(result).toEqual({ id: 'mock-id', ...dto });
+
+    it('should fail if content if empty', async () => {
+      const dto = { content: '' };
+
+      db.comment.create.mockRejectedValue(new Error('Content cannot be empty'));
+      await expect(service.create(dto, userId, postId)).rejects.toThrow(
+        'Content cannot be empty',
+      );
+    });
+
+    it('should fail if userId is missing', async () => {
+      db.comment.create.mockRejectedValue(new Error('User not found'));
+
+      await expect(service.create(dto, '', postId)).rejects.toThrow(
+        'User not found',
+      );
+    });
+
+    it('should fail if postId is missing', async () => {
+      db.comment.create.mockRejectedValue(new Error('Post not found'));
+
+      await expect(service.create(dto, userId, '')).rejects.toThrow(
+        'Post not found',
+      );
+    });
+
+    it('should handle very long content', async () => {
+      const longContent = 'a'.repeat(10_000);
+      const dto = { content: longContent };
+      const expected = { id: 'mock-id', ...dto };
+
+      db.comment.create.mockResolvedValue(expected);
+
+      const result = await service.create(dto, userId, postId);
+      expect(result).toEqual(expected);
+    });
+
+    it('should throw if database throws an error', async () => {
+      db.comment.create.mockRejectedValue(new Error('DB failure'));
+
+      await expect(service.create(dto, userId, postId)).rejects.toThrow(
+        'DB failure',
+      );
+    });
   });
 
-  it('should fail if content if empty', async () => {
-    const dto = { content: '' };
+  describe('findAll', () => {
+    it('should return an array of comments', async () => {
+      const mockComments = [mockComment];
 
-    db.comment.create.mockRejectedValue(new Error('Content cannot be empty'));
-    await expect(service.create(dto, userId, postId)).rejects.toThrow(
-      'Content cannot be empty',
-    );
-  });
+      db.comment.findMany.mockResolvedValue(mockComments);
 
-  it('should fail if userId is missing', async () => {
-    db.comment.create.mockRejectedValue(new Error('User not found'));
+      const result = await service.findAll();
 
-    await expect(service.create(dto, '', postId)).rejects.toThrow(
-      'User not found',
-    );
-  });
+      expect(db.comment.findMany).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockComments);
+    });
 
-  it('should fail if postId is missing', async () => {
-    db.comment.create.mockRejectedValue(new Error('Post not found'));
+    it('should return an empty array when no comments exist', async () => {
+      db.comment.findMany.mockResolvedValue([]);
 
-    await expect(service.create(dto, userId, '')).rejects.toThrow(
-      'Post not found',
-    );
-  });
+      const result = await service.findAll();
 
-  it('should handle very long content', async () => {
-    const longContent = 'a'.repeat(10_000);
-    const dto = { content: longContent };
-    const expected = { id: 'mock-id', ...dto };
+      expect(db.comment.findMany).toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
 
-    db.comment.create.mockResolvedValue(expected);
+    it('should throw an error if database query fails', async () => {
+      db.comment.findMany.mockRejectedValue(new Error('DB error'));
 
-    const result = await service.create(dto, userId, postId);
-    expect(result).toEqual(expected);
-  });
-
-  it('should throw if database throws an error', async () => {
-    db.comment.create.mockRejectedValue(new Error('DB failure'));
-
-    await expect(service.create(dto, userId, postId)).rejects.toThrow(
-      'DB failure',
-    );
+      await expect(service.findAll()).rejects.toThrow('DB error');
+      expect(db.comment.findMany).toHaveBeenCalled();
+    });
   });
 });
