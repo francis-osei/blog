@@ -3,6 +3,7 @@ import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { DatabaseService } from '../database/database.service';
 import { CommentReturn } from './types/comments.type';
+import { UpdateCommentDto } from './dto/update-comment.dto';
 
 type MockDatabaseService = {
   comment: {
@@ -46,7 +47,21 @@ describe('CommentsService', () => {
           },
         ),
       findMany: jest.fn().mockResolvedValue([mockComment]),
-      update: jest.fn(),
+      update: jest
+        .fn()
+        .mockImplementation(
+          (
+            commentId: string,
+            postId: string,
+            updateCommentDto: UpdateCommentDto,
+          ) => {
+            return Promise.resolve({
+              userId,
+              postId,
+              ...updateCommentDto,
+            });
+          },
+        ),
       delete: jest.fn(),
     },
   };
@@ -54,6 +69,7 @@ describe('CommentsService', () => {
   const dto: CreateCommentDto = { content: 'Test comment' };
   const userId = 'user-123';
   const postId = 'post-456';
+  const commentId = 'content-id';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -162,6 +178,90 @@ describe('CommentsService', () => {
 
       await expect(service.findAll()).rejects.toThrow('DB error');
       expect(db.comment.findMany).toHaveBeenCalled();
+    });
+  });
+  describe('update', () => {
+    it('should update the comment content successfully', async () => {
+      const dto: UpdateCommentDto = { content: 'Updated comment' };
+      const expected = {
+        id: commentId,
+        content: dto.content,
+        postId,
+        updatedAt: new Date(),
+      };
+
+      db.comment.update.mockResolvedValue(expected);
+
+      const result = await service.update(commentId, userId, dto);
+
+      expect(db.comment.update).toHaveBeenCalledWith({
+        where: { id: commentId, authorId: userId },
+        data: { content: dto.content },
+        select: {
+          id: true,
+          content: true,
+          createdAt: false,
+          authorId: false,
+          postId: true,
+          updatedAt: true,
+        },
+      });
+
+      expect(result).toEqual(expected);
+    });
+
+    it('should throw an error when the comment does not exist', async () => {
+      db.comment.update.mockRejectedValue(new Error('Comment not found'));
+
+      await expect(
+        service.update(commentId, userId, { content: 'Some content' }),
+      ).rejects.toThrow('Comment not found');
+    });
+
+    it('should throw an error when the user is not the author', async () => {
+      db.comment.update.mockRejectedValue(new Error('Forbidden'));
+
+      await expect(
+        service.update(commentId, 'wrong-user', { content: 'Some content' }),
+      ).rejects.toThrow('Forbidden');
+    });
+
+    it('should handle empty content gracefully', async () => {
+      const dto: UpdateCommentDto = { content: '' };
+      db.comment.update.mockResolvedValue({
+        id: commentId,
+        content: '',
+        postId,
+        updatedAt: new Date(),
+      });
+
+      const result = await service.update(commentId, userId, dto);
+      expect(result.content).toBe('');
+    });
+
+    it('should handle very long content', async () => {
+      const longContent = 'a'.repeat(10_000);
+      const dto: UpdateCommentDto = { content: longContent };
+      const expected = {
+        id: commentId,
+        content: longContent,
+        postId,
+        updatedAt: new Date(),
+      };
+
+      db.comment.update.mockResolvedValue(expected);
+
+      const result = await service.update(commentId, userId, dto);
+      expect(result.content.length).toBe(10_000);
+      expect(result).toEqual(expected);
+    });
+
+    it('should handle database errors gracefully', async () => {
+      db.comment.update.mockRejectedValue(new Error('Database failure'));
+
+      await expect(
+        service.update(commentId, userId, { content: 'update test' }),
+      ).rejects.toThrow('Database failure');
     });
   });
 });
