@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -8,6 +8,7 @@ import Redis from 'ioredis';
 import helmet from 'helmet';
 import { HttpExceptionFilter } from './comments/exception-filters/http-exception.filter';
 import { ConfigService } from '@nestjs/config';
+import { AllExceptionsFilter } from './comments/exception-filters/all-exceptions.filter';
 
 async function bootstrap(): Promise<void> {
   const RedisStore = connectRedis(session);
@@ -15,9 +16,13 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   const PORT = configService.get<number>('PORT');
+  const httpAdapterHost = app.get(HttpAdapterHost);
 
   app.setGlobalPrefix('api/v1');
-  app.useGlobalFilters(new HttpExceptionFilter(configService));
+  app.useGlobalFilters(
+    new HttpExceptionFilter(configService),
+    new AllExceptionsFilter(httpAdapterHost),
+  );
 
   app.use(helmet());
 
