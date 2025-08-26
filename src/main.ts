@@ -17,7 +17,7 @@ async function bootstrap(): Promise<void> {
   const PORT = configService.get<number>('PORT');
 
   app.setGlobalPrefix('api/v1');
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new HttpExceptionFilter(configService));
 
   app.use(helmet());
 
