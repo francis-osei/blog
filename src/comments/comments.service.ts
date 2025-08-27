@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { DatabaseService } from '../database/database.service';
@@ -8,18 +8,30 @@ import { CommentReturn } from './types/comments.type';
 export class CommentsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  create(
+  async create(
     createCommentDto: CreateCommentDto,
     userId: string,
     postId: string,
   ): Promise<CommentReturn> {
-    return this.databaseService.comment.create({
+    const post = await this.databaseService.post.findUnique({
+      where: { id: postId },
+    });
+    if (!post) throw new NotFoundException('Post not found');
+
+    const user = await this.databaseService.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const newComment = this.databaseService.comment.create({
       data: {
         content: createCommentDto.content,
         author: { connect: { id: userId } },
         post: { connect: { id: postId } },
       },
     });
+
+    return newComment;
   }
 
   findAll(): Promise<CommentReturn[]> {
