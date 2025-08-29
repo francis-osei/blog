@@ -4,15 +4,18 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { DatabaseService } from '../database/database.service';
 import { CommentReturn } from './types/comments.type';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { NotFoundException } from '@nestjs/common';
 
-type MockDatabaseService = {
-  comment: {
-    create: jest.Mock;
-    findMany: jest.Mock;
-    update: jest.Mock;
-    delete: jest.Mock;
-  };
-};
+// type MockDatabaseService = {
+//   comment: {
+//     create: jest.Mock;
+//     findMany: jest.Mock;
+//     update: jest.Mock;
+//     delete: jest.Mock;
+//   };
+//   post: jest.Mock;
+//   user: jest.Mock;
+// };
 
 const mockComment: CommentReturn = {
   id: 'mock-id',
@@ -27,44 +30,7 @@ const mockComment: CommentReturn = {
 
 describe('CommentsService', () => {
   let service: CommentsService;
-  let db: MockDatabaseService;
-
-  const mockDatabaseService: MockDatabaseService = {
-    comment: {
-      create: jest
-        .fn()
-        .mockImplementation(
-          (
-            createCommentDto: CreateCommentDto,
-            userId: string,
-            postId: string,
-          ) => {
-            return Promise.resolve({
-              userId,
-              postId,
-              ...createCommentDto,
-            });
-          },
-        ),
-      findMany: jest.fn().mockResolvedValue([mockComment]),
-      update: jest
-        .fn()
-        .mockImplementation(
-          (
-            commentId: string,
-            postId: string,
-            updateCommentDto: UpdateCommentDto,
-          ) => {
-            return Promise.resolve({
-              userId,
-              postId,
-              ...updateCommentDto,
-            });
-          },
-        ),
-      delete: jest.fn(),
-    },
-  };
+  let db: jest.Mocked<DatabaseService>;
 
   const dto: CreateCommentDto = { content: 'Test comment' };
   const userId = 'user-123';
@@ -77,13 +43,22 @@ describe('CommentsService', () => {
         CommentsService,
         {
           provide: DatabaseService,
-          useValue: mockDatabaseService,
+          useValue: {
+            comment: {
+              create: jest.fn(),
+              findMany: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+            },
+            post: { findUnique: jest.fn() },
+            user: { findUnique: jest.fn() },
+          },
         },
       ],
     }).compile();
 
     service = module.get<CommentsService>(CommentsService);
-    db = module.get(DatabaseService) as MockDatabaseService;
+    db = module.get(DatabaseService);
   });
 
   afterEach(() => {
@@ -92,11 +67,23 @@ describe('CommentsService', () => {
 
   describe('create', () => {
     it('should create commnet successfully', async () => {
-      db.comment.create.mockResolvedValue({ id: 'mock-id', ...dto });
+      const mockPost = { id: postId, title: 'test' };
+      const mockUser = { id: userId, name: 'test user' };
+      const mockComment = { id: 'comment-789', content: dto.content };
+
+      (db.post.findUnique as jest.Mock).mockResolvedValue(mockPost);
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (db.comment.create as jest.Mock).mockResolvedValue(mockComment);
 
       const result = await service.create(dto, userId, postId);
 
-      expect(db.comment.create).toHaveBeenCalled();
+      expect(result).toEqual(mockComment);
+      expect(db.post.findUnique).toHaveBeenCalledWith({
+        where: { id: postId },
+      });
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { id: userId },
+      });
       expect(db.comment.create).toHaveBeenCalledWith({
         data: {
           content: dto.content,
@@ -104,50 +91,37 @@ describe('CommentsService', () => {
           post: { connect: { id: postId } },
         },
       });
-      expect(result).toEqual({ id: 'mock-id', ...dto });
     });
 
-    it('should fail if content if empty', async () => {
-      const dto = { content: '' };
-
-      db.comment.create.mockRejectedValue(new Error('Content cannot be empty'));
-      await expect(service.create(dto, userId, postId)).rejects.toThrow(
-        'Content cannot be empty',
-      );
-    });
-
-    it('should fail if userId is missing', async () => {
-      db.comment.create.mockRejectedValue(new Error('User not found'));
-
-      await expect(service.create(dto, '', postId)).rejects.toThrow(
-        'User not found',
-      );
-    });
-
-    it('should fail if postId is missing', async () => {
-      db.comment.create.mockRejectedValue(new Error('Post not found'));
-
-      await expect(service.create(dto, userId, '')).rejects.toThrow(
-        'Post not found',
-      );
-    });
-
-    it('should handle very long content', async () => {
-      const longContent = 'a'.repeat(10_000);
-      const dto = { content: longContent };
-      const expected = { id: 'mock-id', ...dto };
-
-      db.comment.create.mockResolvedValue(expected);
-
-      const result = await service.create(dto, userId, postId);
-      expect(result).toEqual(expected);
-    });
-
-    it('should throw if database throws an error', async () => {
-      db.comment.create.mockRejectedValue(new Error('DB failure'));
+    it('should throw NotFoundException if post not found', async () => {
+      (db.post.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.create(dto, userId, postId)).rejects.toThrow(
-        'DB failure',
+        new NotFoundException('Post not found'),
+      );
+
+      expect(db.user.findUnique).not.toHaveBeenCalled();
+      expect(db.comment.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      (db.post.findUnique as jest.Mock).mockResolvedValue({ id: postId });
+      (db.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.create(dto, userId, postId)).rejects.toThrow(
+        new NotFoundException('User not found'),
+      );
+
+      expect(db.comment.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw if db.comment.create fails', async () => {
+      (db.post.findUnique as jest.Mock).mockResolvedValue({ id: postId });
+      (db.user.findUnique as jest.Mock).mockResolvedValue({ id: userId });
+      (db.comment.create as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      await expect(service.create(dto, userId, postId)).rejects.toThrow(
+        'DB error',
       );
     });
   });
@@ -156,7 +130,7 @@ describe('CommentsService', () => {
     it('should return an array of comments', async () => {
       const mockComments = [mockComment];
 
-      db.comment.findMany.mockResolvedValue(mockComments);
+      (db.comment.findMany as jest.Mock).mockResolvedValue(mockComments);
 
       const result = await service.findAll();
 
@@ -165,7 +139,7 @@ describe('CommentsService', () => {
     });
 
     it('should return an empty array when no comments exist', async () => {
-      db.comment.findMany.mockResolvedValue([]);
+      (db.comment.findMany as jest.Mock).mockResolvedValue([]);
 
       const result = await service.findAll();
 
@@ -174,7 +148,9 @@ describe('CommentsService', () => {
     });
 
     it('should throw an error if database query fails', async () => {
-      db.comment.findMany.mockRejectedValue(new Error('DB error'));
+      (db.comment.findMany as jest.Mock).mockRejectedValue(
+        new Error('DB error'),
+      );
 
       await expect(service.findAll()).rejects.toThrow('DB error');
       expect(db.comment.findMany).toHaveBeenCalled();
@@ -190,7 +166,7 @@ describe('CommentsService', () => {
         updatedAt: new Date(),
       };
 
-      db.comment.update.mockResolvedValue(expected);
+      (db.comment.update as jest.Mock).mockResolvedValue(expected);
 
       const result = await service.update(commentId, userId, dto);
 
@@ -211,7 +187,9 @@ describe('CommentsService', () => {
     });
 
     it('should throw an error when the comment does not exist', async () => {
-      db.comment.update.mockRejectedValue(new Error('Comment not found'));
+      (db.comment.update as jest.Mock).mockRejectedValue(
+        new Error('Comment not found'),
+      );
 
       await expect(
         service.update(commentId, userId, { content: 'Some content' }),
@@ -219,7 +197,9 @@ describe('CommentsService', () => {
     });
 
     it('should throw an error when the user is not the author', async () => {
-      db.comment.update.mockRejectedValue(new Error('Forbidden'));
+      (db.comment.update as jest.Mock).mockRejectedValue(
+        new Error('Forbidden'),
+      );
 
       await expect(
         service.update(commentId, 'wrong-user', { content: 'Some content' }),
@@ -228,7 +208,7 @@ describe('CommentsService', () => {
 
     it('should handle empty content gracefully', async () => {
       const dto: UpdateCommentDto = { content: '' };
-      db.comment.update.mockResolvedValue({
+      (db.comment.update as jest.Mock).mockResolvedValue({
         id: commentId,
         content: '',
         postId,
@@ -249,7 +229,7 @@ describe('CommentsService', () => {
         updatedAt: new Date(),
       };
 
-      db.comment.update.mockResolvedValue(expected);
+      (db.comment.update as jest.Mock).mockResolvedValue(expected);
 
       const result = await service.update(commentId, userId, dto);
       expect(result.content.length).toBe(10_000);
@@ -257,7 +237,9 @@ describe('CommentsService', () => {
     });
 
     it('should handle database errors gracefully', async () => {
-      db.comment.update.mockRejectedValue(new Error('Database failure'));
+      (db.comment.update as jest.Mock).mockRejectedValue(
+        new Error('Database failure'),
+      );
 
       await expect(
         service.update(commentId, userId, { content: 'update test' }),
