@@ -2,12 +2,15 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from '../database/database.service';
 import { hash } from 'bcrypt';
 import { userReturn } from './types/uses.return';
+import { UpdateUserRole } from './dto/updateUserRole';
+import { UpateUserRole } from './types/updateUserRole';
 
 @Injectable()
 export class UsersService {
@@ -107,6 +110,23 @@ export class UsersService {
 
   update(id: number, updateUserDto: UpdateUserDto): string {
     return `This action updates a #${id} ${updateUserDto}user`;
+  }
+
+  async updateRole(
+    userId: string,
+    dto: UpdateUserRole,
+  ): Promise<UpateUserRole> {
+    const user = await this.databaseService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return await this.databaseService.user.update({
+      where: { id: userId },
+      data: { role: dto.role },
+      select: { id: true, email: true, role: true },
+    });
   }
 
   async remove(id: string): Promise<userReturn> {
