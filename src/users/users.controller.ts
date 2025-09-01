@@ -18,6 +18,7 @@ import { Role } from '@prisma/client';
 import { RoleGuard } from '../guards/roles.guard';
 import { ApiResponse } from '../types/api.response';
 import { userReturn } from './types/uses.return';
+import { UpdateUserRole } from './dto/updateUserRole';
 
 @Controller('users')
 export class UsersController {
@@ -35,6 +36,20 @@ export class UsersController {
       message: 'Successful',
       results: users.length,
       data: users,
+    };
+  }
+
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.ADMIN, Role.USER)
+  @Patch(':id')
+  async updateRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserRole,
+  ): Promise<ApiResponse<UpdateUserRole>> {
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Successful',
+      data: await this.usersService.updateRole(id, dto),
     };
   }
 
