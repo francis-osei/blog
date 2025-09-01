@@ -9,6 +9,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -19,6 +21,7 @@ import { RoleGuard } from '../guards/roles.guard';
 import { ApiResponse } from '../types/api.response';
 import { userReturn } from './types/uses.return';
 import { UpdateUserRole } from './dto/updateUserRole';
+import { Request } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -39,17 +42,53 @@ export class UsersController {
     };
   }
 
+  /**
+   * ✅ Endpoint: Admin updates another user's role
+   */
   @UseGuards(AuthGuard, RoleGuard)
-  @Roles(Role.ADMIN, Role.USER)
-  @Patch(':id')
-  async updateRole(
+  @Roles(Role.ADMIN)
+  @Patch(':id/role')
+  async updateUserRole(
+    @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserRole,
   ): Promise<ApiResponse<UpdateUserRole>> {
+    const { userId } = req.session.user;
+
+    if (userId === id) {
+      throw new ForbiddenException('You cannot change your own role');
+    }
+
+    const updated = await this.usersService.updateRole(id, dto);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'successful',
+      data: updated,
+    };
+  }
+
+  /**
+   * ✅ Endpoint: User updates their own role
+   * Restriction: USER cannot set themselves to ADMIN
+   */
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles(Role.USER, Role.AUTHOR)
+  @Patch('me/role')
+  async updateOwnerRole(
+    @Body() dto: UpdateUserRole,
+    @Req() req: Request,
+  ): Promise<ApiResponse<UpdateUserRole>> {
+    const { userId } = req.session.user;
+
+    if (dto.role === Role.ADMIN) {
+      throw new ForbiddenException('You cannot assign yourself as ADMIN');
+    }
+
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
-      data: await this.usersService.updateRole(id, dto),
+      data: await this.usersService.updateRole(userId, dto),
     };
   }
 
