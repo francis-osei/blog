@@ -70,4 +70,10 @@ export class AuthService {
 
     return await this.getTokens(payload);
   }
+
+  async logout(userId: string): Promise<{ message: string }> {
+    await this.usersService.deauthenticateUser(userId);
+
+    return { message: 'Logout successful' };
+  }
 }

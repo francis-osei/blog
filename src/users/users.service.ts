@@ -62,6 +62,15 @@ export class UsersService {
     });
   }
 
+  async deauthenticateUser(userId: string): Promise<void> {
+    await this.databaseService.user.update({
+      where: { id: userId },
+      data: {
+        isAuthenticated: false,
+      },
+    });
+  }
+
   private async getuser(identifier: string): Promise<userReturn | null> {
     const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
 

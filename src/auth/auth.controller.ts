@@ -4,7 +4,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Request,
+  Req,
   Session,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +17,8 @@ import { RefreshGuard } from 'src/guards/refresh.guard';
 import { ApiResponse } from 'src/types/api.response';
 import { userReturn } from 'src/users/types/uses.return';
 import { GetTokens } from './types/auth.types';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -66,11 +68,26 @@ export class AuthController {
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refreshToken(@Request() req): Promise<ApiResponse<GetTokens>> {
+  async refreshToken(@Req() req: Request): Promise<ApiResponse<GetTokens>> {
     return {
       statusCode: HttpStatus.OK,
       message: 'successful',
-      tokens: await this.authservice.refreshToken(req.user),
+      tokens: await this.authservice.refreshToken({
+        sub: req.user.userId,
+        username: req.user.username,
+      }),
+    };
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('logout')
+  async logout(@Req() req: Request): Promise<ApiResponse<null>> {
+    const { userId } = req.session.user;
+    await this.authservice.logout(userId);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'successful',
     };
   }
 }
