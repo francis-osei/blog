@@ -11,6 +11,7 @@ import {
   HttpStatus,
   ForbiddenException,
   Req,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -31,14 +32,26 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   @Get()
-  async findAll(): Promise<ApiResponse<userReturn[]>> {
-    const users = await this.usersService.findAll();
+  async findAll(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ): Promise<ApiResponse<userReturn[]>> {
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const { data, total } = await this.usersService.findAll(
+      pageNumber,
+      limitNumber,
+    );
 
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
-      results: users.length,
-      data: users,
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      results: data.length,
+      data,
     };
   }
 

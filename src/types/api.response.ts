@@ -5,5 +5,8 @@ export type ApiResponse<T> = {
   message: string;
   results?: number;
   tokens?: T;
+  total?: number;
+  page?: number;
+  limit?: number;
   data?: T | null;
 };

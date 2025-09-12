@@ -89,18 +89,31 @@ export class UsersService {
     });
   }
 
-  async findAll(): Promise<userReturn[]> {
-    return await this.databaseService.user.findMany({
-      where: { role: 'USER' },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        password: false,
-        role: true,
-        isAuthenticated: true,
-      },
-    });
+  async findAll(
+    page = 1,
+    limit = 10,
+  ): Promise<{ data: userReturn[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.databaseService.user.findMany({
+        where: { role: 'USER' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          isAuthenticated: true,
+        },
+      }),
+      this.databaseService.user.count({
+        where: { role: 'USER' },
+      }),
+    ]);
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<userReturn> {
