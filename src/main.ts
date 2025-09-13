@@ -6,10 +6,10 @@ import * as session from 'express-session';
 import * as connectRedis from 'connect-redis';
 import Redis from 'ioredis';
 import helmet from 'helmet';
-import { HttpExceptionFilter } from './comments/exception-filters/http-exception.filter';
+import { HttpExceptionFilter } from './exception-filters/http-exception.filter';
 import { ConfigService } from '@nestjs/config';
-import { AllExceptionsFilter } from './comments/exception-filters/all-exceptions.filter';
-import { PrismaExceptionFilter } from './comments/exception-filters/prisma-exceptions.filter';
+import { AllExceptionsFilter } from './exception-filters/all-exceptions.filter';
+import { PrismaExceptionFilter } from './exception-filters/prisma-exceptions.filter';
 
 async function bootstrap(): Promise<void> {
   const RedisStore = connectRedis(session);
