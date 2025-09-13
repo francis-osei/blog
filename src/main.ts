@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import { HttpExceptionFilter } from './comments/exception-filters/http-exception.filter';
 import { ConfigService } from '@nestjs/config';
 import { AllExceptionsFilter } from './comments/exception-filters/all-exceptions.filter';
+import { PrismaExceptionFilter } from './comments/exception-filters/prisma-exceptions.filter';
 
 async function bootstrap(): Promise<void> {
   const RedisStore = connectRedis(session);
@@ -22,6 +23,7 @@ async function bootstrap(): Promise<void> {
   app.useGlobalFilters(
     new HttpExceptionFilter(configService),
     new AllExceptionsFilter(httpAdapterHost),
+    new PrismaExceptionFilter(),
   );
 
   app.use(helmet());
