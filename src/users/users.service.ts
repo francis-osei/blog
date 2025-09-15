@@ -162,6 +162,10 @@ export class UsersService {
   }
 
   async remove(id: string): Promise<userReturn> {
+    if (!id) {
+      throw new BadRequestException('User ID must be provided');
+    }
+
     const user = await this.databaseService.user.findUnique({ where: { id } });
 
     if (!user) throw new BadRequestException('User not found');
