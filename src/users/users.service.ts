@@ -72,6 +72,10 @@ export class UsersService {
   }
 
   private async getuser(identifier: string): Promise<userReturn | null> {
+    if (!identifier) {
+      throw new BadRequestException('A valid user identifier is required');
+    }
+
     const isEmail = /^\S+@\S+\.\S+$/.test(identifier);
 
     const where = isEmail ? { email: identifier } : { id: identifier };
