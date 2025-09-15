@@ -152,6 +152,10 @@ export class UsersService {
     userId: string,
     dto: UpdateUserRole,
   ): Promise<UpateUserRole> {
+    if (!userId) {
+      throw new BadRequestException('A valid user ID is required');
+    }
+
     const user = await this.databaseService.user.findUnique({
       where: { id: userId },
     });
