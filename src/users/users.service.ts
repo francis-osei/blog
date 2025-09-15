@@ -117,7 +117,11 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<userReturn> {
-    return await this.databaseService.user.findUnique({
+    if (!id) {
+      throw new BadRequestException('A valid user ID must be provided');
+    }
+
+    const user = await this.databaseService.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -128,6 +132,12 @@ export class UsersService {
         isAuthenticated: true,
       },
     });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
   }
 
   update(id: number, updateUserDto: UpdateUserDto): string {
