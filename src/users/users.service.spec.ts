@@ -134,4 +134,33 @@ describe('UsersService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('findById', () => {
+    it('should return user when found by id', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service.findById('123');
+
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { id: '123' },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          password: true,
+          role: true,
+          isAuthenticated: true,
+        },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null when user not found by id', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const result = await service.findById('999');
+
+      expect(result).toBeNull();
+    });
+  });
 });
