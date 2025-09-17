@@ -185,4 +185,17 @@ describe('UsersService', () => {
       expect(result).toEqual(mockUser);
     });
   });
+
+  describe('deauthenticateUser', () => {
+    it('should set isAuthenticated to false', async () => {
+      await service.deauthenticateUser('user-id');
+
+      expect(db.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-id' },
+        data: { isAuthenticated: false },
+      });
+
+      expect(db.user.update).toHaveBeenCalledTimes(1);
+    });
+  });
 });
