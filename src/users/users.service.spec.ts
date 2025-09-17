@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { DatabaseService } from '../database/database.service';
 import { userReturn } from './types/uses.return';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { hash } from 'bcrypt';
 
 jest.mock('bcrypt', () => ({
@@ -196,6 +196,64 @@ describe('UsersService', () => {
       });
 
       expect(db.user.update).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should throw BadRequestException if no identifier is provided', async () => {
+      await expect(service['getuser']('')).rejects.toThrow(
+        new BadRequestException('A valid user identifier is required'),
+      );
+
+      expect(db.user.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('should call findUnique with email when identifier is an email', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service['getuser']('test@example.com');
+
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          password: true,
+          role: true,
+          isAuthenticated: true,
+        },
+      });
+
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should call findUnique with id when identifier is not an email', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service['getuser']('user-id');
+
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'user-id' },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          password: true,
+          role: true,
+          isAuthenticated: true,
+        },
+      });
+
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null when no user is found', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const result = await service['getuser']('notfound@example.com');
+
+      expect(result).toBeNull();
     });
   });
 });
