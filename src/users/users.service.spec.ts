@@ -105,4 +105,33 @@ describe('UsersService', () => {
       expect(db.user.create).not.toHaveBeenCalled();
     });
   });
+
+  describe('findByEmail', () => {
+    it('should return user when found by email', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service.findByEmail(mockUser.email);
+
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockUser.email },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          password: true,
+          role: true,
+          isAuthenticated: true,
+        },
+      });
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should return null when user not found by email', async () => {
+      (db.user.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const result = await service.findByEmail('missing@example.com');
+
+      expect(result).toBeNull();
+    });
+  });
 });
