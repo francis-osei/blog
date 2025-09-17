@@ -39,9 +39,8 @@ describe('UsersService', () => {
               findUnique: jest.fn(),
               create: jest.fn(),
               findByEmail: jest.fn(),
+              update: jest.fn(),
               findById: jest.fn(),
-              authenticateUser: jest.fn(),
-              deauthenticateUser: jest.fn(),
               getuser: jest.fn(),
               findAll: jest.fn(),
               findOne: jest.fn(),
@@ -161,6 +160,29 @@ describe('UsersService', () => {
       const result = await service.findById('999');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('authenticateUser', () => {
+    it('should update user isAuthenticated to true', async () => {
+      (db.user.update as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service.authenticateUser('user-id');
+
+      expect(db.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-id' },
+        data: { isAuthenticated: true },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          password: false,
+          role: true,
+          isAuthenticated: true,
+        },
+      });
+
+      expect(result).toEqual(mockUser);
     });
   });
 });
