@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { DatabaseService } from '../database/database.service';
@@ -33,19 +33,25 @@ export class PostsService {
       .replace(/^-+|-+$/g, '');
   }
 
-  findAll(userId: string, published: boolean | null): Promise<PostReturn[]> {
+  findAll(userId: string, published: boolean): Promise<PostReturn[]> {
     return this.databaseService.post.findMany({
       where: {
         author: { id: userId },
-        ...(published !== null && { published }),
+        published,
       },
     });
   }
 
-  findOne(id: string): Promise<PostReturn> {
-    return this.databaseService.post.findUnique({
+  async findOne(id: string): Promise<PostReturn> {
+    const post = await this.databaseService.post.findUnique({
       where: { id },
     });
+
+    if (!post) {
+      throw new NotFoundException(`Post with ID ${id} not found`);
+    }
+
+    return post;
   }
 
   async update(
@@ -53,6 +59,14 @@ export class PostsService {
     userId: string,
     updatePostDto: UpdatePostDto,
   ): Promise<PostReturn> {
+    const existingPost = await this.databaseService.post.findFirst({
+      where: { id, authorId: userId },
+    });
+
+    if (!existingPost) {
+      throw new NotFoundException('Post not found or you are not the owner');
+    }
+
     return this.databaseService.post.update({
       where: { id, authorId: userId },
       data: {
@@ -66,6 +80,14 @@ export class PostsService {
   }
 
   async remove(id: string, userId: string): Promise<PostReturn> {
+    const post = await this.databaseService.post.findFirst({
+      where: { id, authorId: userId },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found or you do not have access');
+    }
+
     return await this.databaseService.post.delete({
       where: { id, authorId: userId },
       select: {
