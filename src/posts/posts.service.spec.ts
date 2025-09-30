@@ -13,30 +13,32 @@ describe('PostsService', () => {
   const userId = 'user-123';
   const postId = 'post-123';
 
-  const mockPost: PostReturn = {
-    id: 'post-id',
+  const dto: CreatePostDto = {
     title: 'My First Post',
     content: 'Some content',
     summary: 'A short summary',
     coverImage: 'image.png',
+  };
+
+  const mockPost: PostReturn = {
+    id: 'post-id',
+    title: dto.title,
+    content: dto.content,
+    summary: dto.summary,
+    coverImage: dto.coverImage,
     slug: 'my-first-post',
     authorId: 'user-id',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
+  const mockPosts: PostReturn[] = [mockPost];
+
   const updateDto: UpdatePostDto = {
     title: 'Updated Post Title',
     content: 'Updated post content with more than 20 characters',
     summary: 'Updated summary',
     coverImage: 'http://example.com/image.jpg',
-  };
-
-  const dto: CreatePostDto = {
-    title: 'My First Post',
-    content: 'Some content',
-    summary: 'A short summary',
-    coverImage: 'image.png',
   };
 
   const existingPost: PostReturn = {
@@ -63,12 +65,13 @@ describe('PostsService', () => {
           provide: DatabaseService,
           useValue: {
             post: {
-              create: jest.fn(),
-              findFirst: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-              findUnique: jest.fn(),
-              findMany: jest.fn(),
+              create: jest.fn().mockResolvedValue(mockPost),
+              findFirst: jest.fn().mockResolvedValue(existingPost),
+              update: jest.fn().mockResolvedValue(updateDto),
+              delete: jest.fn().mockResolvedValue({ id: postId }),
+              findUnique: jest.fn().mockResolvedValue(mockPost),
+              findMany: jest.fn().mockResolvedValue(mockPosts),
+              findOne: jest.fn().mockResolvedValue(mockPost),
             },
           },
         },
@@ -85,8 +88,6 @@ describe('PostsService', () => {
 
   describe('create', () => {
     it('should create a post with a generated slug', async () => {
-      (db.post.create as jest.Mock).mockResolvedValue(mockPost);
-
       const result = await service.create(dto, userId);
 
       expect(db.post.create).toHaveBeenCalledWith({
@@ -117,9 +118,6 @@ describe('PostsService', () => {
 
   describe('update', () => {
     it('should update a post successfully', async () => {
-      (db.post.findFirst as jest.Mock).mockResolvedValue(existingPost);
-      (db.post.update as jest.Mock).mockResolvedValue(updatedPost);
-
       const result = await service.update(postId, userId, updateDto);
 
       expect(db.post.findFirst).toHaveBeenCalledWith({
@@ -135,8 +133,9 @@ describe('PostsService', () => {
           coverImage: updateDto.coverImage,
         },
       });
-      expect(result).toEqual(updatedPost);
+      expect(result).toEqual(updateDto);
     });
+
     it('should throw NotFoundException if post not found or not owned', async () => {
       (db.post.findFirst as jest.Mock).mockResolvedValue(null);
 
@@ -148,7 +147,6 @@ describe('PostsService', () => {
     });
 
     it('should regenerate slug when updating title', async () => {
-      (db.post.findFirst as jest.Mock).mockResolvedValue(existingPost);
       (db.post.update as jest.Mock).mockResolvedValue(updatedPost);
 
       const result = await service.update(postId, userId, updateDto);
@@ -159,9 +157,6 @@ describe('PostsService', () => {
 
   describe('remove', () => {
     it('should delete a post if it exists and belongs to the user', async () => {
-      (db.post.findFirst as jest.Mock).mockResolvedValue(existingPost);
-      (db.post.delete as jest.Mock).mockResolvedValue({ id: postId });
-
       const result = await service.remove(postId, userId);
 
       expect(db.post.findFirst).toHaveBeenCalledWith({
@@ -193,8 +188,6 @@ describe('PostsService', () => {
 
   describe('findOne', () => {
     it('should return a post if found', async () => {
-      (db.post.findUnique as jest.Mock).mockResolvedValue(mockPost);
-
       const result = await service.findOne('123');
 
       expect(result).toEqual(mockPost);
@@ -218,9 +211,6 @@ describe('PostsService', () => {
   describe('findAll', () => {
     it('should return all unpublished posts for a user', async () => {
       const published = false;
-      const mockPosts = [{ id: 'post-2', title: 'Draft Post', published }];
-
-      (db.post.findMany as jest.Mock).mockResolvedValue(mockPosts);
 
       const result = await service.findAll(userId, published);
 
