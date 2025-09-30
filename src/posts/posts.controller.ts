@@ -12,6 +12,7 @@ import {
   UseGuards,
   Query,
   ParseUUIDPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -39,7 +40,7 @@ export class PostsController {
     const { userId } = req.session.user;
 
     return {
-      statusCode: HttpStatus.OK,
+      statusCode: HttpStatus.CREATED,
       message: 'successful',
       data: await this.postsService.create(createPostDto, userId),
     };
@@ -73,10 +74,16 @@ export class PostsController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApiResponse<PostReturn>> {
+    const post = await this.postsService.findOne(id);
+
+    if (!post) {
+      throw new NotFoundException(`Post with ID ${id} not found`);
+    }
+
     return {
       statusCode: HttpStatus.OK,
       message: 'successful',
-      data: await this.postsService.findOne(id),
+      data: post,
     };
   }
 
@@ -91,10 +98,18 @@ export class PostsController {
   ): Promise<ApiResponse<PostReturn>> {
     const { userId } = req.session.user;
 
+    const updated = await this.postsService.update(id, userId, updatePostDto);
+
+    if (!updated) {
+      throw new NotFoundException(
+        `Post with ID ${id} not found or you do not have permission to update it`,
+      );
+    }
+
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
-      data: await this.postsService.update(id, userId, updatePostDto),
+      data: updated,
     };
   }
 
@@ -108,10 +123,18 @@ export class PostsController {
   ): Promise<ApiResponse<PostReturn>> {
     const { userId } = req.session.user;
 
+    const removed = await this.postsService.remove(id, userId);
+
+    if (!removed) {
+      throw new NotFoundException(
+        `Post with ID ${id} not found or you do not have permission to delete it`,
+      );
+    }
+
     return {
       statusCode: HttpStatus.OK,
       message: 'Successful',
-      data: await this.postsService.remove(id, userId),
+      data: removed,
     };
   }
 }
