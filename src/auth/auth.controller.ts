@@ -27,13 +27,13 @@ export class AuthController {
     private readonly authservice: AuthService,
   ) {}
 
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @Post('register')
   async register(
     @Body() createUserDto: CreateUserDto,
   ): Promise<ApiResponse<userReturn>> {
     return {
-      statusCode: HttpStatus.OK,
+      statusCode: HttpStatus.CREATED,
       message: 'Successful',
       data: await this.userService.create(createUserDto),
     };
