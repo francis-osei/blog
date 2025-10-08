@@ -3,21 +3,23 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  InternalServerErrorException,
   Post,
   Req,
   Session,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { UsersService } from 'src/users/users.service';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { AuthLoginDto } from './dto/auth-login.dto';
 import { SessionData } from 'express-session';
-import { RefreshGuard } from 'src/guards/refresh.guard';
-import { ApiResponse } from 'src/types/api.response';
+import { RefreshGuard } from '../guards/refresh.guard';
+import { ApiResponse } from '../types/api.response';
 import { userReturn } from 'src/users/types/uses.return';
 import { GetTokens } from './types/auth.types';
-import { AuthGuard } from 'src/guards/auth.guard';
+import { AuthGuard } from '../guards/auth.guard';
 import { Request } from 'express';
 
 @Controller('auth')
@@ -69,21 +71,37 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refreshToken(@Req() req: Request): Promise<ApiResponse<GetTokens>> {
+    if (!req.user) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokens = await this.authservice.refreshToken({
+      sub: req.user.userId,
+      username: req.user.username,
+    });
+
     return {
       statusCode: HttpStatus.OK,
       message: 'successful',
-      tokens: await this.authservice.refreshToken({
-        sub: req.user.userId,
-        username: req.user.username,
-      }),
+      tokens,
     };
   }
 
   @UseGuards(AuthGuard)
   @Post('logout')
   async logout(@Req() req: Request): Promise<ApiResponse<null>> {
-    const { userId } = req.session.user;
-    await this.authservice.logout(userId);
+    const user = req.session?.user;
+    if (!user?.userId) {
+      throw new UnauthorizedException('User session not found');
+    }
+
+    req.session.destroy((err) => {
+      if (err) {
+        throw new InternalServerErrorException('Failed to log out');
+      }
+    });
+
+    await this.authservice.logout(user.userId);
 
     return {
       statusCode: HttpStatus.OK,
