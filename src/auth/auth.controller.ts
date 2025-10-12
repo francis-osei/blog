@@ -18,7 +18,7 @@ import { SessionData } from 'express-session';
 import { RefreshGuard } from '../guards/refresh.guard';
 import { ApiResponse } from '../types/api.response';
 import { userReturn } from 'src/users/types/uses.return';
-import { GetTokens } from './types/auth.types';
+import { AuthRequest, GetTokens, JwtPayload } from './types/auth.types';
 import { AuthGuard } from '../guards/auth.guard';
 import { Request } from 'express';
 
@@ -70,13 +70,15 @@ export class AuthController {
   @UseGuards(RefreshGuard)
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
-  async refreshToken(@Req() req: Request): Promise<ApiResponse<GetTokens>> {
+  async refreshToken(
+    @Req() req: AuthRequest & { user?: JwtPayload },
+  ): Promise<ApiResponse<GetTokens>> {
     if (!req.user) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     const tokens = await this.authservice.refreshToken({
-      sub: req.user.userId,
+      sub: req.user.sub,
       username: req.user.username,
     });
 

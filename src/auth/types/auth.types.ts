@@ -18,3 +18,12 @@ export type GetTokens = {
   access_token: string;
   refresh_token: string;
 };
+
+export type JwtPayload = {
+  sub: string;
+  username: string;
+  iat?: number;
+  exp?: number;
+};
+
+export type AuthRequest = Request & { user?: JwtPayload };

@@ -7,8 +7,7 @@ import { userReturn } from '../users/types/uses.return';
 import { ApiResponse } from '../types/api.response';
 import { RefreshGuard } from '../guards/refresh.guard';
 import { AuthGuard } from '../guards/auth.guard';
-import { Request } from 'express';
-import { GetTokens } from './types/auth.types';
+import { AuthRequest, GetTokens } from './types/auth.types';
 import {
   HttpStatus,
   InternalServerErrorException,
@@ -161,14 +160,14 @@ describe('AuthController', () => {
   describe('refresh', () => {
     it('should refrersh token successfully', async () => {
       const req = {
-        user: { userId: 'user-123', username: 'john doe' },
-      } as Request;
+        user: { sub: 'user-123', username: 'john doe' },
+      } as AuthRequest;
 
       const result: ApiResponse<GetTokens> =
         await authController.refreshToken(req);
 
       expect(authService.refreshToken).toHaveBeenCalledWith({
-        sub: req.user.userId,
+        sub: req.user.sub,
         username: req.user.username,
       });
       expect(result).toEqual({
@@ -179,7 +178,7 @@ describe('AuthController', () => {
     });
 
     it('should throw UnauthorizedException if user is missing', async () => {
-      const req = {} as Request;
+      const req = {} as AuthRequest;
 
       await expect(authController.refreshToken(req)).rejects.toThrow(
         UnauthorizedException,

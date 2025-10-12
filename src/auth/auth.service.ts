@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { compare } from 'bcrypt';
@@ -42,11 +43,11 @@ export class AuthService {
   }): Promise<GetTokens> {
     return {
       access_token: await this.jwtService.signAsync(payload, {
-        expiresIn: _env.ACCESS_TOKEN_EXPIRY,
+        expiresIn: _env.ACCESS_TOKEN_EXPIRY || '15m',
         secret: process.env.JWT_SECRET_KEY,
       }),
       refresh_token: await this.jwtService.signAsync(payload, {
-        expiresIn: _env.REFRESH_TOKEN_EXPIRY,
+        expiresIn: _env.REFRESH_TOKEN_EXPIRY || '7d',
         secret: process.env.JWT_REFRESH_TOKEN_KEY,
       }),
     };
@@ -55,8 +56,10 @@ export class AuthService {
   async validatUser(userDto: AuthLoginDto): Promise<userReturn> {
     const user = await this.usersService.findByEmail(userDto.email);
 
-    if (!user || !(await compare(userDto.password, user.password))) {
-      throw new UnauthorizedException();
+    const isPasswordValid = await compare(userDto.password, user.password);
+
+    if (!user || !isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     return user;
@@ -67,11 +70,21 @@ export class AuthService {
     username: string;
   }): Promise<GetTokens> {
     const payload = { sub: payloadDto.sub, username: payloadDto.username };
+    const user = await this.usersService.findById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
 
     return await this.getTokens(payload);
   }
 
   async logout(userId: string): Promise<{ message: string }> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     await this.usersService.deauthenticateUser(userId);
 
     return { message: 'Logout successful' };
