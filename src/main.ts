@@ -10,6 +10,7 @@ import { HttpExceptionFilter } from './exception-filters/http-exception.filter';
 import { ConfigService } from '@nestjs/config';
 import { AllExceptionsFilter } from './exception-filters/all-exceptions.filter';
 import { PrismaExceptionFilter } from './exception-filters/prisma-exceptions.filter';
+import { createCorsOptions } from './config/cors.config';
 
 async function bootstrap(): Promise<void> {
   const RedisStore = connectRedis(session);
@@ -27,6 +28,8 @@ async function bootstrap(): Promise<void> {
   );
 
   app.use(helmet());
+
+  app.enableCors(createCorsOptions(configService));
 
   app.set('trust proxy', 1);
 

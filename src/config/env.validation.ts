@@ -1,12 +1,24 @@
-import { plainToInstance } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsString, validateSync } from 'class-validator';
+import { plainToInstance, Transform } from 'class-transformer';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  validateSync,
+} from 'class-validator';
 
-class EnvironmentVariables {
+enum Environment {
+  DEVELOPMENT = 'development',
+  PRODUCTION = 'production',
+  TEST = 'test',
+}
+export class EnvironmentVariables {
   @IsNotEmpty()
   @IsNumber()
   PORT: number;
 
-  @IsNotEmpty()
+  @IsEnum(Environment)
   @IsString()
   NODE_ENV: string;
 
@@ -33,6 +45,14 @@ class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   REFRESH_TOKEN_EXPIRY: string;
+
+  @IsNotEmpty()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.split(',').map((v) => v.trim()) : value,
+  )
+  ALLOWED_ORIGINS: string[];
 }
 
 export function validate(
