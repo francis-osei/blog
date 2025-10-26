@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { DatabaseService } from '../database/database.service';
@@ -36,15 +36,29 @@ export class ProfilesService {
   }
 
   async findOne(id: string): Promise<ProfileReturn> {
-    return await this.databaseService.profile.findUnique({
+    const profile = await this.databaseService.profile.findUnique({
       where: { id },
     });
+
+    if (!profile) {
+      throw new NotFoundException(`Profile with ID "${id}" not found`);
+    }
+
+    return profile;
   }
 
   async update(
     id: string,
     updateProfileDto: UpdateProfileDto,
   ): Promise<ProfileReturn> {
+    const existingProfile = await this.databaseService.profile.findUnique({
+      where: { id },
+    });
+
+    if (!existingProfile) {
+      throw new NotFoundException(`Profile with ID "${id}" not found.`);
+    }
+
     const updatedProfile = await this.databaseService.profile.update({
       where: { id },
       data: {
