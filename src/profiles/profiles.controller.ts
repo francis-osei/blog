@@ -36,7 +36,7 @@ export class ProfilesController {
     const { userId } = req.session.user;
 
     return {
-      statusCode: HttpStatus.OK,
+      statusCode: HttpStatus.CREATED,
       message: 'successful',
       data: await this.profilesService.create(createProfileDto, userId),
     };
