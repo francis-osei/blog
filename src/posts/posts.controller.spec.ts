@@ -3,86 +3,37 @@ import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/roles.guard';
-import { CreatePostDto } from './dto/create-post.dto';
 import { PostReturn } from './types/posts.return';
 import { ApiResponse } from '../types/api.response';
 import { Request } from 'express';
 import { HttpStatus, NotFoundException } from '@nestjs/common';
-import { UpdatePostDto } from './dto/update-post.dto';
+import {
+  dtoStub,
+  mockPostsStub,
+  mockPostStub,
+  updateDtoStub,
+  userId,
+} from './test/stubs/posts.stub';
+
+jest.mock('./posts.service');
 
 describe('PostsController', () => {
   let controller: PostsController;
   let postsService: jest.Mocked<PostsService>;
 
-  const userId = 'user-1234';
-
-  const dto: CreatePostDto = {
-    title: 'My first post',
-    content: 'This is my first post content with at least 20 chars',
-    coverImage: 'http://example.com/image.png',
-    summary: 'Optional summary',
-  };
-
-  const mockPost: PostReturn = {
-    id: 'post-123',
-    title: dto.title,
-    slug: 'my-first-post',
-    content: dto.content,
-    summary: dto.summary,
-    coverImage: dto.coverImage,
-    published: false,
-    authorId: userId,
-  };
-
-  const updateDto: UpdatePostDto = {
-    title: 'Updated Title',
-    content: 'Updated content',
-    summary: 'Updated summary',
-    coverImage: 'http://example.com/cover.png',
-  };
-
-  const mockPosts: PostReturn[] = [
-    {
-      id: '1',
-      title: 'Post 1',
-      slug: 'post-1',
-      content: '...',
-      summary: '...',
-      coverImage: 'img.png',
-      published: true,
-      authorId: userId,
-    },
-    {
-      id: '2',
-      title: 'Draft Post',
-      slug: 'draft-post',
-      content: '...',
-      summary: '...',
-      coverImage: 'img.png',
-      published: false,
-      authorId: userId,
-    },
-  ];
+  const dto = dtoStub();
+  const mockPost = mockPostStub();
+  const mockPosts = mockPostsStub();
+  const updateDto = updateDtoStub();
 
   const req = {
-    session: { user: { userId: userId } },
+    session: { user: { userId } },
   } as Request;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PostsController],
-      providers: [
-        {
-          provide: PostsService,
-          useValue: {
-            create: jest.fn().mockResolvedValue(mockPost),
-            findAll: jest.fn().mockResolvedValue(mockPosts),
-            findOne: jest.fn().mockResolvedValue(mockPost),
-            update: jest.fn().mockResolvedValue(mockPost),
-            remove: jest.fn().mockResolvedValue(mockPost),
-          },
-        },
-      ],
+      providers: [PostsService],
     })
       .overrideGuard(AuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })

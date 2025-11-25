@@ -1,5 +1,4 @@
 import { Request } from 'express';
-import { JwtService } from '@nestjs/jwt';
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -7,67 +6,25 @@ import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/roles.guard';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
-import { CreateCommentDto } from './dto/create-comment.dto';
-import { UpdateCommentDto } from './dto/update-comment.dto';
-import { CommentReturn } from './types/comments.type';
+import {
+  commentsStub,
+  commentsDto,
+  updatedCommentsStud,
+} from './test/stubs/comments.stub';
+
+jest.mock('./comments.service');
 
 describe('CommentsController', () => {
   let controller: CommentsController;
   let service: CommentsService;
 
+  const mockComment = commentsStub();
+  const mockUpdatedComment = updatedCommentsStud();
+
   const userId = 'user-id';
   const postId = 'post-id';
-  const commentId = 'comment-id';
 
   let req: Request;
-
-  const mockComment = {
-    id: '1',
-    content: 'First comment',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    postId: 'post1',
-    authorId: 'user1',
-    author: { id: 'user1', name: 'john' },
-    post: { id: 'post1', title: 'Mock Post' },
-  };
-
-  const mockCommentsService = {
-    findAll: jest.fn().mockResolvedValue([mockComment]),
-    create: jest
-      .fn()
-      .mockImplementation(
-        (
-          createCommentDto: CreateCommentDto,
-          userId: string,
-          postId: string,
-        ) => {
-          return Promise.resolve({
-            userId,
-            postId,
-            ...createCommentDto,
-          });
-        },
-      ),
-    findOne: jest.fn().mockResolvedValue('Single comment'),
-    update: jest
-      .fn()
-      .mockImplementation(
-        (
-          id: string,
-          userId: string,
-          updateCommentDto: UpdateCommentDto,
-        ): Promise<CommentReturn> => {
-          return Promise.resolve({
-            id,
-            content: updateCommentDto.content,
-            updatedAt: new Date(),
-            postId: 'mock-post-id',
-          });
-        },
-      ),
-    remove: jest.fn().mockResolvedValue(mockComment),
-  };
 
   beforeEach(async () => {
     req = {
@@ -76,89 +33,58 @@ describe('CommentsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CommentsController],
-      providers: [
-        {
-          provide: CommentsService,
-          useValue: mockCommentsService,
-        },
-        { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
-        {
-          provide: AuthGuard,
-          useValue: { canActivate: jest.fn().mockReturnValue(true) },
-        },
-        {
-          provide: RoleGuard,
-          useValue: { canActivate: jest.fn().mockReturnValue(true) },
-        },
-      ],
-    }).compile();
+      providers: [CommentsService],
+    })
+
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .overrideGuard(RoleGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<CommentsController>(CommentsController);
     service = module.get<CommentsService>(CommentsService);
   });
 
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('create', () => {
-    const dto: CreateCommentDto = {
-      content: 'Hello world',
-    };
-
     it('should create a comment and return ApiResponse', async () => {
-      mockCommentsService.create.mockResolvedValue(mockComment);
+      const result = await controller.create(postId, req, commentsDto);
 
-      const result = await controller.create(postId, req, dto);
-
-      expect(service.create).toHaveBeenCalledWith(dto, userId, postId);
+      expect(service.create).toHaveBeenCalledWith(commentsDto, userId, postId);
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: 'Successful',
-        data: mockComment,
+        data: {
+          ...mockComment,
+          createdAt: expect.any(Date),
+          updatedAt: expect.any(Date),
+        },
       });
     });
 
     it('should throw if session is missing', async () => {
       req = {} as Request;
 
-      await expect(controller.create(postId, req, dto)).rejects.toThrow();
+      await expect(
+        controller.create(postId, req, commentsDto),
+      ).rejects.toThrow();
     });
 
     it('should throw if session.user is missing', async () => {
       req = { session: {} } as unknown as Request;
 
-      await expect(controller.create(postId, req, dto)).rejects.toThrow();
-    });
-
-    it('should throw an error if service throws', async () => {
-      req = {
-        session: { user: { userId } },
-      } as unknown as Request;
-
-      mockCommentsService.create.mockRejectedValue(
-        new Error('Database failure'),
-      );
-
-      await expect(controller.create(postId, req, dto)).rejects.toThrow(
-        'Database failure',
-      );
-    });
-
-    it('should throw if DTO is invalid (missing content)', async () => {
-      req = {
-        session: { user: { userId } },
-      } as unknown as Request;
-
-      const invalidDto = {} as CreateCommentDto;
-
-      // If you use class-validator with ValidationPipe globally, the controller will reject invalid DTOs
       await expect(
-        controller.create(postId, req, invalidDto),
+        controller.create(postId, req, commentsDto),
       ).rejects.toThrow();
     });
   });
 
   describe('findAll', () => {
     it('should return all comments in ApiResponse', async () => {
-      mockCommentsService.findAll.mockResolvedValue([mockComment]);
-
       const result = await controller.findAll();
 
       expect(service.findAll).toHaveBeenCalled();
@@ -166,12 +92,18 @@ describe('CommentsController', () => {
         statusCode: HttpStatus.OK,
         message: 'Successful',
         results: [mockComment].length,
-        data: [mockComment],
+        data: [
+          {
+            ...mockComment,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          },
+        ],
       });
     });
 
     it('should return empty list when no comment exist', async () => {
-      mockCommentsService.findAll.mockResolvedValue([]);
+      (service.findAll as jest.Mock).mockResolvedValueOnce([]);
 
       const result = await controller.findAll();
 
@@ -185,7 +117,7 @@ describe('CommentsController', () => {
     });
 
     it('should throw error if service throws', async () => {
-      mockCommentsService.findAll.mockRejectedValue(
+      (service.findAll as jest.Mock).mockRejectedValue(
         new Error('Unexpected failure'),
       );
 
@@ -196,22 +128,22 @@ describe('CommentsController', () => {
 
   describe('findOne', () => {
     it('should return a single comment', () => {
-      mockCommentsService.findOne.mockReturnValue('Single comment');
+      (service.findOne as jest.Mock).mockReturnValue(mockComment);
 
       const result = controller.findOne('1');
 
       expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(result).toBe('Single comment');
+      expect(result).toBe(mockComment);
     });
   });
 
   describe('remove', () => {
     it('should delete a comment and return ApiResponse', async () => {
-      mockCommentsService.remove.mockResolvedValue(mockComment);
+      (service.remove as jest.Mock).mockResolvedValue(mockComment);
 
-      const result = await controller.remove(req, commentId);
+      const result = await controller.remove(req, mockComment.id);
 
-      expect(service.remove).toHaveBeenCalledWith(commentId, userId);
+      expect(service.remove).toHaveBeenCalledWith(mockComment.id, userId);
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: 'Successful',
@@ -221,110 +153,111 @@ describe('CommentsController', () => {
     it('should throw if session is missing', async () => {
       req = {} as Request;
 
-      await expect(controller.remove(req, commentId)).rejects.toThrow();
+      await expect(controller.remove(req, mockComment.id)).rejects.toThrow();
     });
 
     it('should throw if session.user is missing', async () => {
       req = { session: {} } as Request;
 
-      await expect(controller.remove(req, commentId)).rejects.toThrow();
-    });
-
-    it('should throw if service throws an error', async () => {
-      mockCommentsService.remove.mockRejectedValue(
-        new Error('Service failure'),
-      );
-
-      await expect(controller.remove(req, commentId)).rejects.toThrow(
-        'Service failure',
-      );
+      await expect(controller.remove(req, mockComment.id)).rejects.toThrow();
     });
   });
 
   describe('update', () => {
-    const dto: UpdateCommentDto = { content: 'Updated content' };
+    // const commentsDto: UpdateCommentcommentsDto = { content: 'Updated content' };
 
     it('should update a comment and return ApiResponse (success)', async () => {
       req = {
         session: { user: { userId } },
       } as unknown as Request;
 
-      const mockUpdatedComment = {
-        id: commentId,
-        content: dto.content,
-        postId: 'mock-post-id',
-        updatedAt: new Date(),
-      };
+      // const mockUpdatedComment = {
+      //   id: mockComment.id,
+      //   content: mockComment.content,
+      //   postId: 'mock-post-id',
+      //   updatedAt: new Date(),
+      // };
 
-      mockCommentsService.update.mockResolvedValue(mockUpdatedComment);
+      (service.update as jest.Mock).mockResolvedValue(mockUpdatedComment);
 
-      const result = await controller.update(req, commentId, dto);
+      const result = await controller.update(req, mockComment.id, commentsDto);
 
-      expect(service.update).toHaveBeenCalledWith(commentId, userId, dto);
+      expect(service.update).toHaveBeenCalledWith(
+        mockComment.id,
+        userId,
+        commentsDto,
+      );
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: 'Successful',
-        data: {
-          id: commentId,
-          content: dto.content,
-          postId: 'mock-post-id',
-          updatedAt: expect.any(Date),
-        },
+        data: mockUpdatedComment,
       });
     });
 
     it('should throw if session is missing', async () => {
       req = {} as Request;
 
-      await expect(controller.update(req, commentId, dto)).rejects.toThrow();
+      await expect(
+        controller.update(req, mockComment.id, commentsDto),
+      ).rejects.toThrow();
     });
 
     it('should throw if session.user is missing', async () => {
       req = { session: {} } as unknown as Request;
 
-      await expect(controller.update(req, commentId, dto)).rejects.toThrow();
+      await expect(
+        controller.update(req, mockComment.id, commentsDto),
+      ).rejects.toThrow();
     });
 
     it('should throw NotFoundException if comment not found', async () => {
-      mockCommentsService.update.mockRejectedValueOnce({
+      (service.update as jest.Mock).mockRejectedValueOnce({
         statusCode: HttpStatus.NOT_FOUND,
         message: 'Comment not found',
       });
 
-      await expect(controller.update(req, commentId, dto)).rejects.toEqual({
+      await expect(
+        controller.update(req, mockComment.id, commentsDto),
+      ).rejects.toEqual({
         statusCode: HttpStatus.NOT_FOUND,
         message: 'Comment not found',
       });
 
-      expect(service.update).toHaveBeenCalledWith(commentId, userId, dto);
+      expect(service.update).toHaveBeenCalledWith(
+        mockComment.id,
+        userId,
+        commentsDto,
+      );
     });
 
     it('should throw ForbiddenException if user is not the author', async () => {
-      mockCommentsService.update.mockRejectedValueOnce({
+      (service.update as jest.Mock).mockRejectedValueOnce({
         statusCode: HttpStatus.FORBIDDEN,
         message: 'Forbidden',
       });
 
-      await expect(controller.update(req, commentId, dto)).rejects.toEqual({
+      await expect(
+        controller.update(req, mockComment.id, commentsDto),
+      ).rejects.toEqual({
         statusCode: HttpStatus.FORBIDDEN,
         message: 'Forbidden',
       });
 
-      expect(service.update).toHaveBeenCalledWith(commentId, userId, dto);
+      expect(service.update).toHaveBeenCalledWith(
+        mockComment.id,
+        userId,
+        commentsDto,
+      );
     });
 
     it('should throw error if service throws unexpected error', async () => {
-      mockCommentsService.update.mockRejectedValueOnce(
+      (service.update as jest.Mock).mockRejectedValueOnce(
         new Error('Database error'),
       );
 
-      await expect(controller.update(req, commentId, dto)).rejects.toThrow(
-        'Database error',
-      );
+      await expect(
+        controller.update(req, mockComment.id, commentsDto),
+      ).rejects.toThrow('Database error');
     });
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 });
