@@ -2,56 +2,31 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 import { Request } from 'express';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { ProfileReturn } from './types/profiles.response';
 import { HttpStatus } from '@nestjs/common';
 import { AuthGuard } from '../guards/auth.guard';
 import { RoleGuard } from '../guards/roles.guard';
-import { UpdateProfileDto } from './dto/update-profile.dto';
+import {
+  createProfileDtoStub,
+  ProfileStub,
+  updatedProfileStub,
+  updateProfileDtoStub,
+} from './test/stubs/profilesStubs';
+
+jest.mock('./profiles.service');
 
 describe('ProfilesController', () => {
   let controller: ProfilesController;
   let profileService: ProfilesService;
 
-  const dto: CreateProfileDto = {
-    profileImage: 'https://example.com/avatar.jpg',
-    bio: 'Software developer passionate about clean code and design.',
-  };
-
-  const mockProfile: ProfileReturn = {
-    id: '12345',
-    profileImage: 'https://example.com/avatar.jpg',
-    bio: 'Software developer passionate about clean code and design.',
-    userId: 'user_6789',
-    createdAt: new Date('2025-01-01T10:00:00Z'),
-    updatedAt: new Date('2025-02-01T12:00:00Z'),
-  };
-
-  const updateDto: UpdateProfileDto = {
-    bio: 'Updated bio for testing',
-    profileImage: 'https://example.com/avatar.jpg',
-  };
-
-  const mockProfileUpdate: ProfileReturn = {
-    ...mockProfile,
-    bio: 'Updated bio for testing',
-    profileImage: 'https://example.com/avatar.jpg',
-  };
+  const dto = createProfileDtoStub();
+  const mockProfile = ProfileStub();
+  const updateDto = updateProfileDtoStub();
+  const updatedProfile = updatedProfileStub();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProfilesController],
-      providers: [
-        {
-          provide: ProfilesService,
-          useValue: {
-            create: jest.fn().mockResolvedValue(mockProfile),
-            findAll: jest.fn().mockResolvedValue([mockProfile]),
-            findOne: jest.fn().mockResolvedValue(mockProfile),
-            update: jest.fn().mockResolvedValue(mockProfileUpdate),
-          },
-        },
-      ],
+      providers: [ProfilesService],
     })
       .overrideGuard(AuthGuard)
       .useValue({ canActivate: jest.fn(() => true) })
@@ -77,6 +52,8 @@ describe('ProfilesController', () => {
         },
       } as Request;
 
+      jest.spyOn(profileService, 'create').mockResolvedValueOnce(mockProfile);
+
       const { userId } = req.session.user;
       const result = await controller.create(req, dto);
 
@@ -91,6 +68,10 @@ describe('ProfilesController', () => {
 
   describe('findAll', () => {
     it('should return all profules successfully', async () => {
+      jest
+        .spyOn(profileService, 'findAll')
+        .mockResolvedValueOnce([mockProfile]);
+
       const result = await controller.findAll();
 
       expect(profileService.findAll).toHaveBeenCalled();
@@ -106,6 +87,9 @@ describe('ProfilesController', () => {
   describe('findOne', () => {
     it('should return the profile for the given ID', async () => {
       const id = 'profile-123';
+
+      jest.spyOn(profileService, 'findOne').mockResolvedValueOnce(mockProfile);
+
       const result = await controller.findOne(id);
 
       expect(profileService.findOne).toHaveBeenCalledWith(id);
@@ -130,13 +114,18 @@ describe('ProfilesController', () => {
   describe('update', () => {
     it('should return updated profile data when successful', async () => {
       const id = mockProfile.id;
+
+      jest
+        .spyOn(profileService, 'update')
+        .mockResolvedValueOnce(updatedProfile);
+
       const result = await controller.update(id, updateDto);
 
       expect(profileService.update).toHaveBeenCalledWith(id, updateDto);
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: 'Successful',
-        data: mockProfileUpdate,
+        data: updatedProfile,
       });
     });
 
